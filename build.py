@@ -1,58 +1,63 @@
 #!/usr/bin/env python3
-"""Blush Tiny Blossoms — static site builder.  Run:  python3 build.py   →  writes ./dist
+"""Blush Tiny Blossoms — static site builder.  Run:  python3 build.py   →  writes ./docs
 
 Everything a non-developer needs to change lives in the SETTINGS and LOOKS blocks below.
 """
-import hashlib, html, json, shutil
+import hashlib, html, json, re, shutil
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).parent
-SRC, DIST = ROOT / "src", ROOT / "dist"
+SRC, DIST = ROOT / "src", ROOT / "docs"   # GitHub Pages serves the docs/ folder of the main branch
 
 # ───────── SETTINGS: edit these ─────────
 SHOP = {
     "name": "Blush Tiny Blossoms",
     "domain": "https://blushtinyblossoms.co.in",
     "instagram": "blushtinyblossoms",
-    "whatsapp": "",          # e.g. "919812345678" (country code, no +). Empty hides every WhatsApp button.
+    "whatsapp": "919899090496",   # e.g. "919812345678" (country code, no +). Empty hides every WhatsApp button.
     "currency": "₹",
     "mode": "enquiry",       # "enquiry" now. Switch to "store" once prices and checkoutUrl are set.
     "checkoutUrl": "",       # payment / checkout page, used only in "store" mode
 }
-GIRL_SIZES = ["2–3Y", "4–5Y", "6–8Y", "9–12Y", "13–16Y"]
-BOY_SIZES = []               # empty = "Sizes on request"
+# Sizes, in the order they are shown. Prices come in five bands of two sizes each (see the pricing sheet).
+SIZES = ["3–4Y", "4–5Y", "5–6Y", "6–7Y", "7–8Y", "8–9Y", "9–10Y", "10–11Y", "11–12Y", "12–13Y"]
+BANDS = ["3–4Y & 4–5Y", "5–6Y & 6–7Y", "7–8Y & 8–9Y", "9–10Y & 10–11Y", "11–12Y & 12–13Y"]
 
-# price: a number (e.g. 4500) shows the price; None shows "Price on request".
+# prices: five numbers, one per band above (from the "Collection Pricing" Google Sheet). None shows "Price on request".
 LOOKS = [
-    dict(id="lavender-meadow", name="Lavender Meadow", sil="Sleeveless gingham kurta + tiered sharara", pal="Lavender / Ecru / Zari gold", cat=["sharara"], price=None, pos="50% 20%",
+    dict(id="lavender-meadow", name="Lavender Meadow", sil="Sleeveless gingham kurta + tiered sharara", pal="Lavender / Ecru / Zari gold", cat=["sharara"], prices=[6700, 7700, 8200, 8700, 9200], pos="50% 20%",
          fabric="Hand-loomed cotton gingham, gold gota edging", detail="Soft lavender checks layered with oversized wildflower bouquets. Sleeveless A-line kurta with tiered sharara, finished with fine kinari gota.", styling="Bare feet on grass, tiny jhumkis, braided hair."),
-    dict(id="blush-tropica", name="Blush Tropica", sil="Peplum strappy top + tiered sharara", pal="Blush / Fern green / Cream", cat=["peplum", "sharara"], price=None,
+    dict(id="blush-tropica", name="Blush Tropica", sil="Peplum strappy top + tiered sharara", pal="Blush / Fern green / Cream", cat=["peplum", "sharara"], prices=[6700, 7700, 8200, 8700, 9200],
          fabric="Blush pink gingham, tropical botanical print, cotton voile lining", detail="Signature strappy peplum with gathered hem, paired with a three-tier sharara. Hand-printed monstera and hibiscus in sage and rose.", styling="For a poolside mehendi. Add pearl flats."),
-    dict(id="nilgiri", name="Nilgiri", sil="Full-sleeve kurta pant with gota", pal="Teal / Bubblegum / Mustard", cat=["kurta"], price=None,
+    dict(id="nilgiri", name="Nilgiri", sil="Full-sleeve kurta pant with gota", pal="Teal / Bubblegum / Mustard", cat=["kurta"], prices=[5700, 6700, 7200, 7700, 8200],
          fabric="Teal cotton, hand-block tropical florals, pink triangle gota", detail="A quiet statement. Full sleeves, straight kurta with contrast pyjama. Inverted pink gota triangles at the hem and a tropical vine print at the border.", styling="Brother-sister twinning ready."),
-    dict(id="daffodil-picnic", name="Daffodil Picnic", sil="Ruffle-sleeve peplum + wide palazzo", pal="Peony / Daffodil / Leaf", cat=["peplum"], price=None,
+    dict(id="daffodil-picnic", name="Daffodil Picnic", sil="Ruffle-sleeve peplum + wide palazzo", pal="Peony / Daffodil / Leaf", cat=["peplum"], prices=[4500, 5500, 6000, 6500, 7000],
          fabric="Pink gingham, ruffle cap sleeves, daffodil border print", detail="Frill-sleeve peplum that flares like a tea rose. Wide palazzo with a hand-painted daffodil garden running along the hem.", styling="Birthday garden party. Mini potli in ivory."),
-    dict(id="gulab-dust", name="Gulab Dust", sil="Embroidered kurta sharara set", pal="Dusty rose / Ivory / Sage", cat=["sharara"], price=None,
+    dict(id="gulab-dust", name="Gulab Dust", sil="Embroidered kurta sharara set", pal="Dusty rose / Ivory / Sage", cat=["sharara"], prices=[6700, 7700, 8200, 8700, 9200],
          fabric="Dusty rose handloom, mirror and resham floral embroidery", detail="Our most heirloom piece. Faded rose base with ivory and sage resham buttis, accented with tiny mirrors and French knots."),
-    dict(id="rosewood-zari", name="Rosewood Zari", sil="Long-sleeve kurta sharara with sequin neckline", pal="Rosewood / Antique gold", cat=["sharara"], price=None,
+    dict(id="rosewood-zari", name="Rosewood Zari", sil="Long-sleeve kurta sharara with sequin neckline", pal="Rosewood / Antique gold", cat=["sharara"], prices=[6700, 7700, 8200, 8700, 9200],
          fabric="Rosewood pink cotton, gold sequin butti, zari yoke", detail="A longer silhouette with full sleeves. Deep neckline densely embroidered in gold sequin, with zari booti scattered across the sharara."),
-    dict(id="haldi-orchard", name="Haldi Orchard", sil="Tie-up peplum + booti sharara", pal="Mustard / Marigold / Ecru", cat=["peplum", "sharara"], price=None,
+    dict(id="haldi-orchard", name="Haldi Orchard", sil="Tie-up peplum + booti sharara", pal="Mustard / Marigold / Ecru", cat=["peplum", "sharara"], prices=[6700, 7700, 8200, 8700, 9200],
          fabric="Mustard yellow cotton, tie-up yoke, hand-embroidered booti", detail="Front tie-up peplum with heavy yoke embroidery and tiny tassels. Sharara covered in all-over miniature floral buttis. Sunlit and festive.", styling="Haldi or Basant. Keep accessories minimal."),
-    dict(id="lime-bahaar", name="Lime Bahaar", sil="Yoke-embroidered kurta sharara", pal="Chartreuse / Gulabi / Lime leaf", cat=["sharara"], price=None,
+    dict(id="lime-bahaar", name="Lime Bahaar", sil="Yoke-embroidered kurta sharara", pal="Chartreuse / Gulabi / Lime leaf", cat=["sharara"], prices=[6000, 7000, 7500, 8000, 8500],
          fabric="Lime chartreuse cotton, pink gota and yoke embroidery", detail="Unexpected and joyful. Chartreuse kurta with a dense floral yoke and contrast pink gota at the tiered sharara seams. A favourite for photos."),
-    dict(id="colorblock-bagh", name="Colorblock Bagh", sil="Gingham + ivory embroidered top & skirt", pal="Pink / Chikankari ivory / Garden green", cat=["coord"], price=None,
+    dict(id="colorblock-bagh", name="Color Block Bagh", sil="Gingham + ivory embroidered top & skirt", pal="Pink / Chikankari ivory / Garden green", cat=["coord"], prices=[6000, 7000, 7500, 8000, 8500],
          fabric="Pink gingham, ivory chikankari embroidery, cotton skirt", detail="Playful colorblock. Pink gingham bodice with an ivory embroidered yoke and a full gathered skirt in ivory with gingham facing. Festive but light."),
-    dict(id="colorblock-bagh-sunshine", name="Colorblock Bagh", variant="Sunshine", sil="Gingham + botanical panel top & skirt", pal="Sunshine / Teal / Ivory", cat=["coord"], price=None,
+    dict(id="colorblock-bagh-sunshine", name="Color Block Bagh", variant="Sunshine", sil="Gingham + botanical panel top & skirt", pal="Sunshine / Teal / Ivory", cat=["coord"], prices=None,   # not in the pricing sheet yet
          fabric="Yellow gingham and teal botanical print cotton, lace trim", detail="The same garden colorblock in sunshine yellow. Gingham and teal botanical panels on the top and gathered skirt, finished with a soft lace hem."),
-    dict(id="mogra-lehenga", name="Mogra Lehenga", sil="Halter choli + gathered lehenga", pal="Mint / Sequin / Blush", cat=["lehenga"], price=None, pos="50% 30%",
-         fabric="Mint organza and cotton, sequin handwork", detail="Halter choli with delicate sitara work and an airy gathered lehenga."),
-    dict(id="bagh-bandi", name="Bagh Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], price=None, boys=True,
-         fabric="Sage cotton kurta and pyjama, rose botanical print jacket", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
+    dict(id="blush-blossom-dress", name="Blush Blossom Dress", sil="Embellished bodice + tiered tulle dress", pal="Blush / Ivory / Soft gold", cat=["dress"], prices=[6700, 7700, 8200, 8700, 9200], pos="50% 40%",
+         fabric="Blush tulle in gathered tiers, hand-embellished bodice", detail="A cloud of blush tulle. Flutter sleeves and a bodice scattered with hand-embellished flowers, over a full tiered skirt made for twirling.", styling="Birthdays and garden parties."),
+    dict(id="little-bloom-dress", name="Little Bloom Dress", sil="Strappy tulle dress with appliqué flowers", pal="Ivory / Lilac / Lemon / Coral", cat=["dress"], prices=[6700, 7700, 8200, 8700, 9200], pos="50% 35%",
+         fabric="Ivory tulle skirt, satin bodice, hand-applied fabric flowers", detail="An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."),
+    dict(id="mint-blossom-lehnga", name="Mint Blossom Lehnga", sil="Embellished choli + flared lehnga", pal="Mint / Soft gold / Rose", cat=["lehenga"], prices=[6700, 7700, 8200, 8700, 9200], pos="50% 30%",
+         fabric="Mint lehnga and choli with sequin and bead handwork", detail="A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."),
+    dict(id="gardenia-bandi-set", name="Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], prices=[5300, 6300, 6800, 7300, 7800], pos="50% 30%",
+         fabric="Sage kurta and pyjama, rose botanical print bandi", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
 ]
 FILTERS = [("all", "All looks", None), ("sharara", "Sharara sets", "lavender-meadow"), ("peplum", "Peplum sets", "daffodil-picnic"), ("kurta", "Kurta sets", "nilgiri"),
-           ("coord", "Skirt co-ords", "colorblock-bagh"), ("lehenga", "Lehengas", "mogra-lehenga"), ("boys", "Boys", "bagh-bandi")]
-FEATURED = ["lavender-meadow", "daffodil-picnic", "haldi-orchard", "colorblock-bagh"]
+           ("coord", "Skirt co-ords", "colorblock-bagh"), ("dress", "Dresses", "blush-blossom-dress"), ("lehenga", "Lehngas", "mint-blossom-lehnga"), ("boys", "Boys", "gardenia-bandi-set")]
+FEATURED = ["lavender-meadow", "blush-blossom-dress", "haldi-orchard", "little-bloom-dress"]
 INSTA = ["blush-tropica", "lime-bahaar", "colorblock-bagh", "haldi-orchard", "daffodil-picnic", "lavender-meadow"]
 # ───────── end of settings ─────────
 
@@ -60,14 +65,17 @@ e = html.escape
 BY_ID = {l["id"]: l for l in LOOKS}
 for l in LOOKS:
     l.setdefault("pos", "50% 35%")
-    l["sizes"] = BOY_SIZES if l.get("boys") else GIRL_SIZES
+    l["sizes"] = SIZES
+    l["priceBySize"] = {sz: l["prices"][i // 2] for i, sz in enumerate(SIZES)} if l.get("prices") else None
+COUNT = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"][len(LOOKS)]
 IG = f"https://www.instagram.com/{SHOP['instagram']}/"
 DM = f"https://ig.me/m/{SHOP['instagram']}"
 DIMS = {}
 
 
 def full(l): return l["name"] + (f" · {l['variant']}" if l.get("variant") else "")
-def price(l): return f"{SHOP['currency']}{l['price']:,}" if l["price"] else "Price on request"
+def rupees(n): return f"{SHOP['currency']}{n:,}"
+def price(l): return f"From {rupees(min(l['prices']))}" if l.get("prices") else "Price on request"
 def title_html(l): return e(l["name"]) + (f' <em style="color:var(--ink-soft)">{e(l["variant"])}</em>' if l.get("variant") else "")
 
 
@@ -109,7 +117,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
 {robots}
-<meta name="theme-color" content="#FBF3F2">
+<meta name="theme-color" content="#FFFDFC">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{SHOP['name']}">
 <meta property="og:title" content="{e(title)}">
@@ -119,9 +127,8 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap">
+<link rel="preload" href="/fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v={VER}">
 {ld}
 </head>
@@ -175,7 +182,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 
 STEPS = """<div class="steps">
       <div class="step"><h3>Choose a look</h3><p>Open any look to see its fabric, detailing and the sizes it comes in.</p></div>
-      <div class="step"><h3>Message us</h3><p>Add looks to your enquiry bag, or send the look name and your child’s age on Instagram. We reply with price and availability.</p></div>
+      <div class="step"><h3>Message us</h3><p>Add looks to your enquiry bag, or send the look name and your child’s age on WhatsApp or Instagram. We reply to confirm availability.</p></div>
       <div class="step"><h3>Confirm the fit</h3><p>Share height and chest measurements if you are between sizes and we will guide you.</p></div>
       <div class="step"><h3>Delivered to you</h3><p>We confirm dispatch and delivery time on chat before you pay.</p></div>
     </div>"""
@@ -193,7 +200,7 @@ INSTA_HTML = '<div class="insta-grid">' + "".join(
     f'<a href="{IG}" target="_blank" rel="noopener" aria-label="Open Instagram">{{{i}}}</a>' for i in range(len(INSTA))) + "</div>"
 
 
-def size_chips(): return "".join(f"<span>{s}</span>" for s in GIRL_SIZES)
+def size_chips(): return "".join(f"<span>{s}</span>" for s in SIZES)
 
 
 def home():
@@ -201,7 +208,7 @@ def home():
     body = f"""<section class="hero">
   <div class="wrap">
     <div class="hero-copy">
-      <span class="eyebrow">Kids Festive ’26 · Ages 2 to 16</span>
+      <span class="eyebrow">Kids Festive ’26 · Ages 3 to 13</span>
       <h1>Gingham <em>meets</em> gulab.</h1>
       <p class="lede">A garden party of tropical florals blooming on checks, tiered shararas that spin, and gota that catches light like morning dew.</p>
       <p class="body">Festive wear from our Shahpur Jat atelier, cut in soft cottons with hand-printed botanicals and heirloom gota work. Made for twirling at Diwali, mehendi mornings and birthday lawns.</p>
@@ -215,7 +222,7 @@ def home():
       <a class="arch a1" href="/looks/blush-tropica">{img("blush-tropica", "Girl twirling in the Blush Tropica pink gingham peplum and tiered sharara", hero_sizes, eager=True)}<span class="tagchip">Blush Tropica</span></a>
       <div class="col">
         <a class="arch a2" href="/looks/gulab-dust">{img("gulab-dust", "Girl in the Gulab Dust embroidered kurta sharara under a rose arch", hero_sizes, eager=True)}</a>
-        <a class="arch a3" href="/looks/mogra-lehenga">{img("mogra-lehenga", "Toddler in the mint Mogra Lehenga", hero_sizes, pos="50% 30%", eager=True)}</a>
+        <a class="arch a3" href="/looks/mint-blossom-lehnga">{img("mint-blossom-lehnga", "Little girl in the Mint Blossom Lehnga", hero_sizes, pos="50% 22%", eager=True)}</a>
       </div>
     </div>
   </div>
@@ -226,11 +233,11 @@ def home():
     {RULE}
     <div class="sec-head" style="margin-top:clamp(40px,6vw,72px)">
       <span class="eyebrow">The English Garden Edit</span>
-      <h2>Twelve looks, <em>one garden</em></h2>
+      <h2>{COUNT} looks, <em>one garden</em></h2>
       <p>A first look at the edit. Open any piece for fabric, detail and sizes.</p>
     </div>
     <div class="grid">{"".join(card(BY_ID[i]) for i in FEATURED)}</div>
-    <p class="center mt"><a class="btn ghost" href="/collection">See all twelve looks</a></p>
+    <p class="center mt"><a class="btn ghost" href="/collection">See all {COUNT.lower()} looks</a></p>
   </div>
 </section>
 
@@ -253,12 +260,12 @@ def home():
     <div class="twin-copy">
       <span class="eyebrow">For siblings</span>
       <h2>Brother and sister, <em>in bloom together</em></h2>
-      <p>Nilgiri carries its teal tropical print across a relaxed kurta and pyjama, and the Bagh Bandi Set pairs a sage kurta with a rose botanical jacket. Dress them from the same garden without matching them exactly.</p>
+      <p>Nilgiri carries its teal tropical print across a relaxed kurta and pyjama, and the Gardenia Bandi Set pairs a sage kurta with a rose botanical jacket. Dress them from the same garden without matching them exactly.</p>
       <a class="btn ghost" href="/collection?show=boys">See the boys’ look</a>
     </div>
     <div class="twin-art">
       <a class="arch" href="/looks/nilgiri">{img("nilgiri", "Girl in the teal Nilgiri kurta and pant", "(max-width:820px) 45vw, 25vw")}</a>
-      <a class="arch" href="/looks/bagh-bandi">{img("bagh-bandi", "Boy in a sage kurta pyjama with rose botanical bandi jacket", "(max-width:820px) 45vw, 25vw")}</a>
+      <a class="arch" href="/looks/gardenia-bandi-set">{img("gardenia-bandi-set", "Boy in a sage kurta pyjama with rose botanical bandi jacket", "(max-width:820px) 45vw, 25vw")}</a>
     </div>
   </div>
 </section>
@@ -273,12 +280,12 @@ def home():
     <div class="care">
       <div>
         <span class="eyebrow">Sizing &amp; make</span>
-        <h2>Kids to teen, <em style="color:#F0B4CC">one relaxed fit</em></h2>
+        <h2>Three to thirteen, <em style="color:#F0B4CC">one relaxed fit</em></h2>
         <p style="margin-top:22px"><a class="btn" style="background:#FFF6F7;color:var(--ink);border-color:#FFF6F7" href="/size-care">Size &amp; care guide</a></p>
       </div>
       <dl>
-        <div><dt>Sizes</dt><dd><div class="sizes">{size_chips()}</div>Relaxed fit with side-seam pockets in the shararas. The tiered volume is scaled for teen lengths.</dd></div>
-        <div><dt>Fabric</dt><dd>100% cotton bases with gota, sequin and resham handwork.</dd></div>
+        <div><dt>Sizes</dt><dd><div class="sizes">{size_chips()}</div>Relaxed fit with side-seam pockets in the shararas. The tiered volume is scaled up for the older sizes.</dd></div>
+        <div><dt>Fabric</dt><dd>Cotton bases for the printed sets and tulle for the dresses, with gota, sequin and resham handwork.</dd></div>
         <div><dt>Care</dt><dd>Dry-clean only. Professional dry-cleaning preserves the print and embroidery.</dd></div>
       </dl>
     </div>
@@ -299,9 +306,9 @@ def home():
     ld = {"@context": "https://schema.org", "@type": "ClothingStore", "name": SHOP["name"], "url": SHOP["domain"],
           "image": f"{SHOP['domain']}/img/blush-tropica-og.jpg", "logo": f"{SHOP['domain']}/img/logo.png", "sameAs": [IG],
           "address": {"@type": "PostalAddress", "addressLocality": "Shahpur Jat, New Delhi", "addressCountry": "IN"},
-          "description": "Festive wear for children aged 2 to 16, made in limited pieces in New Delhi."}
+          "description": "Festive wear for children aged 3 to 13, made in limited pieces in New Delhi."}
     return layout("/", "Blush Tiny Blossoms · Kids’ festive wear, made in India",
-                  "Festive wear for little ones aged 2 to 16. Hand-block florals, gingham and gota work, made in limited pieces at our Shahpur Jat atelier, New Delhi.", body, jsonld=ld)
+                  "Festive wear for little ones aged 3 to 13. Hand-block florals, gingham and gota work, made in limited pieces at our Shahpur Jat atelier, New Delhi.", body, jsonld=ld)
 
 
 def collection():
@@ -312,7 +319,7 @@ def collection():
     body = f"""<section class="page-head">
   <div class="wrap">
     <span class="eyebrow">The English Garden Edit · Festive ’26</span>
-    <h1>Twelve looks, <em>one garden</em></h1>
+    <h1>{COUNT} looks, <em>one garden</em></h1>
     <p class="lede">Open a look for fabric, detail and sizes, then add it to your enquiry bag.</p>
   </div>
 </section>
@@ -325,13 +332,13 @@ def collection():
     ld = {"@context": "https://schema.org", "@type": "ItemList", "name": "The English Garden Edit",
           "itemListElement": [{"@type": "ListItem", "position": i + 1, "url": f"{SHOP['domain']}/looks/{l['id']}", "name": full(l)} for i, l in enumerate(LOOKS)]}
     return layout("/collection", "The collection · Blush Tiny Blossoms",
-                  "Twelve festive looks for children: tiered shararas, peplum sets, kurta sets, skirt co-ords and a lehenga, in gingham, hand-block florals and gota.", body, active="/collection", jsonld=ld)
+                  f"{COUNT} festive looks for children: tiered shararas, peplum sets, kurta sets, skirt co-ords, tulle dresses and a lehnga.", body, active="/collection", jsonld=ld)
 
 
 def look(l, prev, nxt):
     sizes = l["sizes"]
     size_html = ("".join(f'<button type="button" aria-pressed="false">{s}</button>' for s in sizes) if sizes
-                 else '<span class="hint">Sizes on request. Tell us his age and we will guide you.</span>')
+                 else '<span class="hint">Sizes on request. Tell us your child’s age and we will guide you.</span>')
     styling = f'<dt>Styling</dt><dd class="it">{e(l["styling"])}</dd>' if l.get("styling") else ""
     related = [x for x in LOOKS if x["id"] != l["id"] and set(x["cat"]) & set(l["cat"])]
     related = (related + [x for x in LOOKS if x["id"] != l["id"] and x not in related])[:4]
@@ -342,7 +349,7 @@ def look(l, prev, nxt):
     <div class="look-body">
       <span class="eyebrow">{e(l["pal"])}</span>
       <div><h1>{title_html(l)}</h1><p class="sil" style="margin-top:10px">{e(l["sil"])}</p></div>
-      <p class="price">{price(l)}</p>
+      <p class="price" id="look-price">{price(l)}</p>
       <p class="desc">{e(l["detail"])}</p>
       <dl class="spec"><dt>Fabric</dt><dd>{e(l["fabric"])}</dd>{styling}<dt>Care</dt><dd>Dry-clean only</dd></dl>
       <div>
@@ -351,18 +358,18 @@ def look(l, prev, nxt):
       </div>
       <div class="dlg-cta">
         <button class="btn" type="button" id="look-add">Add to enquiry bag</button>
-        <a class="btn ghost" id="look-wa" href="#" target="_blank" rel="noopener" hidden>WhatsApp</a>
+        <a class="btn ghost" id="look-wa" href="#" target="_blank" rel="noopener" hidden>Enquire on WhatsApp</a>
       </div>
       <p class="added" id="look-added" role="status"></p>
       <div>
-        <span class="field-label">Or message us directly</span>
+        <span class="field-label">Or message us on Instagram</span>
         <div class="msg" id="look-msg"></div>
       </div>
       <div class="dlg-cta">
         <button class="btn ghost" type="button" id="look-copy" data-label="Copy message">Copy message</button>
         <a class="btn ghost" href="{DM}" target="_blank" rel="noopener">Open Instagram chat</a>
       </div>
-      <p class="hint">Copy the message, then paste it in our Instagram chat. We reply with price and availability.</p>
+      <p class="hint">WhatsApp opens with the message ready. For Instagram, copy the message and paste it in our chat.</p>
       <nav class="pager" aria-label="More looks">
         <a href="/looks/{prev['id']}"><span>Previous</span><b>{e(full(prev))}</b></a>
         <a href="/looks/{nxt['id']}"><span>Next</span><b>{e(full(nxt))}</b></a>
@@ -379,8 +386,8 @@ def look(l, prev, nxt):
     ld = {"@context": "https://schema.org", "@type": "Product", "name": full(l), "description": l["detail"], "material": l["fabric"],
           "image": f"{SHOP['domain']}/img/{l['id']}-og.jpg", "brand": {"@type": "Brand", "name": SHOP["name"]}, "category": "Children's festive wear",
           "url": f"{SHOP['domain']}/looks/{l['id']}"}
-    if l["price"]:
-        ld["offers"] = {"@type": "Offer", "price": l["price"], "priceCurrency": "INR", "availability": "https://schema.org/InStock", "url": ld["url"]}
+    if l.get("prices"):
+        ld["offers"] = {"@type": "AggregateOffer", "lowPrice": min(l["prices"]), "highPrice": max(l["prices"]), "priceCurrency": "INR", "url": ld["url"]}
     return layout(f"/looks/{l['id']}", f"{full(l)} · {l['sil']} · Blush Tiny Blossoms", f"{l['detail']} {l['fabric']}.", body, og=l["id"], active="/collection", jsonld=ld)
 
 
@@ -388,22 +395,24 @@ def story():
     body = f"""<section class="page-head">
   <div class="wrap">
     <span class="eyebrow">Our story</span>
-    <h1>Festive wear that lets little ones <em>be little</em></h1>
-    <p class="lede">Clothes for running across lawns, spinning until dizzy and falling asleep in the car on the way home.</p>
+    <h1>Born from Blush. Inspired by Aryaana. <em>Made for little moments.</em></h1>
   </div>
 </section>
 
 <section class="section" style="padding-top:0">
   <div class="wrap split" style="align-items:center">
     <div class="duo">
+      <div class="arch">{img("blush-blossom-dress", "Little girl in the Blush Blossom Dress at a garden party", "(max-width:820px) 45vw, 24vw", pos="50% 30%")}</div>
       <div class="arch">{img("gulab-dust", "Girl in the Gulab Dust embroidered kurta sharara", "(max-width:820px) 45vw, 24vw")}</div>
-      <div class="arch">{img("lime-bahaar", "Girl in the chartreuse Lime Bahaar kurta sharara", "(max-width:820px) 45vw, 24vw")}</div>
     </div>
     <div class="story-copy">
-      <span class="eyebrow">The atelier</span>
-      <h2>Made in small numbers, <em>in Shahpur Jat</em></h2>
-      <p class="body">Blush Tiny Blossoms makes festive wear for children aged two to sixteen. Every piece is cut and finished at our atelier in Shahpur Jat, New Delhi, in limited numbers, so each look stays a little rare.</p>
-      <p class="body">We start with soft cotton, because a child who is comfortable is a child who is happy. Then come the things that make it festive: hand-block florals, fine kinari gota, mirror work and resham embroidery.</p>
+      <span class="eyebrow">How it began</span>
+      <p class="body">For 15 years, Blush has been creating Indian and formal wear for women at <strong>BLUSH Kanak Chandhok, Shahpur Jat</strong>.</p>
+      <p class="lede">Over the years, our clients often asked, “When are you going to make something for our little ones?”</p>
+      <p class="body">Then came Aryaana — our little muse, who wore her mother’s creations for festivals and celebrations and received endless compliments.</p>
+      <p class="body">Soon, friends and clients began asking for outfits for their little girls, and for beautiful mother-daughter twinning moments.</p>
+      <p class="body">And that’s how <strong>Blush Tiny Blossoms</strong> came to life — a little world of joyful, elegant and beautifully crafted outfits, made for the little girls who make every celebration brighter.</p>
+      <h2 style="font-size:clamp(1.5rem,2.6vw,2.1rem);margin-top:6px">For twirls, togetherness and <em>memories that last a lifetime.</em></h2>
     </div>
   </div>
 </section>
@@ -412,7 +421,7 @@ def story():
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">What we care about</span><h2>Three things, <em>every piece</em></h2></div>
     <div class="values">
-      <div class="value" style="color:var(--rose)">{BLOSSOM}<h3 style="color:var(--ink)">Soft first</h3><p>100% cotton bases that sit gently on young skin, through a long evening of celebrations.</p></div>
+      <div class="value" style="color:var(--rose)">{BLOSSOM}<h3 style="color:var(--ink)">Soft first</h3><p>Fabrics chosen to sit gently on young skin, through a long evening of celebrations.</p></div>
       <div class="value" style="color:var(--rose)">{BLOSSOM}<h3 style="color:var(--ink)">Made to move</h3><p>A relaxed fit, side-seam pockets in the shararas and tiers that are cut to twirl. Nothing stiff, nothing scratchy.</p></div>
       <div class="value" style="color:var(--rose)">{BLOSSOM}<h3 style="color:var(--ink)">Handwork that shows</h3><p>Gota, sequin and resham handwork, placed where it catches the light and kept away from where it would bother.</p></div>
     </div>
@@ -440,13 +449,13 @@ def story():
   </div>
 </section>"""
     return layout("/our-story", "Our story · Blush Tiny Blossoms",
-                  "Blush Tiny Blossoms makes festive wear for children aged 2 to 16 in soft cotton, with hand-block florals and gota work, at our atelier in Shahpur Jat, New Delhi.", body, og="rosewood-zari", active="/our-story")
+                  "Born from Blush, the women’s wear label at Shahpur Jat, and inspired by Aryaana: how Blush Tiny Blossoms came to make festive wear for little ones.", body, og="rosewood-zari", active="/our-story")
 
 
 FAQ = [
-    ("How do I order?", 'Choose a look and add it to your <a href="/bag">enquiry bag</a>, or message us on Instagram with the look name and your child’s age. We reply with price and availability, and confirm everything on chat before you pay.'),
-    ("Why are prices on request?", "Each look is made in limited pieces. We share the price together with what is available in your size when you message us."),
-    ("Which sizes do you make?", "Girls’ looks come in 2–3Y, 4–5Y, 6–8Y, 9–12Y and 13–16Y. For the boys’ Bagh Bandi Set, tell us his age and we will guide you."),
+    ("How do I order?", 'Choose a look, pick a size and add it to your <a href="/bag">enquiry bag</a>, then send it to us on WhatsApp or Instagram. We confirm availability and everything else on chat before you pay.'),
+    ("Why does the price change with size?", "Each look is priced in five size bands, from 3–4Y up to 12–13Y. Pick a size on any look to see its price."),
+    ("Which sizes do you make?", "Every look comes in ten sizes, from 3–4Y to 12–13Y."),
     ("My child is between sizes. What should I do?", "Send us height and chest measurements along with their age. We will suggest the size that fits best."),
     ("How long does delivery take?", "We confirm dispatch and delivery time on chat before you pay."),
     ("How do I care for the outfit?", "Dry-clean only. Professional dry-cleaning preserves the print and the embroidery."),
@@ -458,12 +467,12 @@ def faq_html():
 
 
 def size_care():
-    rows = "".join(f"<tr><td>{s}</td><td>{a}</td></tr>" for s, a in zip(GIRL_SIZES, ["2 to 3 years", "4 to 5 years", "6 to 8 years", "9 to 12 years", "13 to 16 years"]))
+    rows = "".join(f"<tr><td>{a} · {b}</td><td>{a[:-1].replace('–', ' to ')} years, {b[:-1].replace('–', ' to ')} years</td></tr>" for a, b in zip(SIZES[::2], SIZES[1::2]))
     body = f"""<section class="page-head">
   <div class="wrap">
     <span class="eyebrow">Size &amp; care</span>
-    <h1>Kids to teen, <em>one relaxed fit</em></h1>
-    <p class="lede">Five sizes from two to sixteen years, cut with room to move and to grow.</p>
+    <h1>Three to thirteen, <em>one relaxed fit</em></h1>
+    <p class="lede">Ten sizes from three to thirteen years, cut with room to move and to grow.</p>
   </div>
 </section>
 
@@ -475,7 +484,7 @@ def size_care():
         <thead><tr><th scope="col">Size</th><th scope="col">Age</th></tr></thead>
         <tbody>{rows}</tbody>
       </table>
-      <p class="hint" style="margin-top:16px">Relaxed fit with side-seam pockets in the shararas. The tiered volume is scaled for teen lengths. Boys’ sizes are on request.</p>
+      <p class="hint" style="margin-top:16px">Relaxed fit with side-seam pockets in the shararas. The tiered volume is scaled up for the older sizes. Each row is one price band; pick a size on any look to see its price.</p>
     </div>
     <div>
       <h2>How to <em>measure</em></h2>
@@ -498,7 +507,7 @@ def size_care():
         <h2>Looked after, <em style="color:#F0B4CC">it lasts</em></h2>
       </div>
       <dl>
-        <div><dt>Fabric</dt><dd>100% cotton bases with gota, sequin and resham handwork.</dd></div>
+        <div><dt>Fabric</dt><dd>Cotton bases for the printed sets and tulle for the dresses, with gota, sequin and resham handwork.</dd></div>
         <div><dt>Care</dt><dd>Dry-clean only. Professional dry-cleaning preserves the print and embroidery.</dd></div>
         <div><dt>Fit</dt><dd>Relaxed through the body, with tiered volume in the shararas.</dd></div>
       </dl>
@@ -516,12 +525,12 @@ def size_care():
     ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", a)}} for q, a in FAQ]}
     return layout("/size-care", "Size & care · Blush Tiny Blossoms",
-                  "Sizes from 2–3Y to 13–16Y, how to measure your child, fabric and care for Blush Tiny Blossoms festive wear.", body, og="lavender-meadow", active="/size-care", jsonld=ld)
+                  "Sizes from 3–4Y to 12–13Y, how to measure your child, fabric and care for Blush Tiny Blossoms festive wear.", body, og="lavender-meadow", active="/size-care", jsonld=ld)
 
 
 def contact():
     opts = '<option value="">The whole collection</option>' + "".join(f'<option value="{l["id"]}">{e(full(l))}</option>' for l in LOOKS)
-    sz = '<option value="">Not sure yet</option>' + "".join(f"<option>{s}</option>" for s in GIRL_SIZES)
+    sz = '<option value="">Not sure yet</option>' + "".join(f"<option>{s}</option>" for s in SIZES)
     body = f"""<section class="page-head">
   <div class="wrap">
     <span class="eyebrow">Contact</span>
@@ -533,8 +542,8 @@ def contact():
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="ways">
-      <div class="way"><span class="eyebrow">Instagram</span><h3>Message us</h3><p>The quickest way to reach us. Send the look name and your child’s age.</p><a class="btn" href="{DM}" target="_blank" rel="noopener">Open Instagram chat</a></div>
-      <div class="way" data-wa hidden><span class="eyebrow">WhatsApp</span><h3>Chat on WhatsApp</h3><p>Prefer WhatsApp? Send us a message and we will take it from there.</p><a class="btn ghost" href="#" target="_blank" rel="noopener">WhatsApp us</a></div>
+      <div class="way" data-wa hidden><span class="eyebrow">WhatsApp</span><h3>Chat on WhatsApp</h3><p>The quickest way to reach us. Send a message and we will take it from there.</p><a class="btn" href="#" target="_blank" rel="noopener">WhatsApp us</a></div>
+      <div class="way"><span class="eyebrow">Instagram</span><h3>Message us</h3><p>See new looks and fittings, and message us with the look name and your child’s age.</p><a class="btn ghost" href="{DM}" target="_blank" rel="noopener">Open Instagram chat</a></div>
       <div class="way"><span class="eyebrow">Atelier</span><h3>Shahpur Jat, New Delhi</h3><p>Where every piece is cut, embroidered and finished, in limited numbers.</p><a class="btn ghost" href="/our-story">Our story</a></div>
     </div>
   </div>
@@ -542,7 +551,7 @@ def contact():
 
 <section class="section band">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Send an enquiry</span><h2>Tell us what you <em>need</em></h2><p>Fill this in and we will write the message for you. Copy it, then paste it in our Instagram chat.</p></div>
+    <div class="sec-head"><span class="eyebrow">Send an enquiry</span><h2>Tell us what you <em>need</em></h2><p>Fill this in and we will write the message for you, ready to send on WhatsApp or Instagram.</p></div>
     <div class="composer">
       <form class="form" id="enquiry" novalidate>
         <label>Your name<input name="name" type="text" autocomplete="name"></label>
@@ -556,9 +565,9 @@ def contact():
         <span class="eyebrow">Your message</span>
         <div class="msg" id="enq-msg"></div>
         <div class="dlg-cta">
-          <button class="btn" type="button" id="enq-copy" data-label="Copy message">Copy message</button>
+          <a class="btn" id="enq-wa" data-msg="1" href="#" target="_blank" rel="noopener" hidden>Send on WhatsApp</a>
+          <button class="btn ghost" type="button" id="enq-copy" data-label="Copy message">Copy message</button>
           <a class="btn ghost" href="{DM}" target="_blank" rel="noopener">Open Instagram chat</a>
-          <a class="btn ghost" id="enq-wa" data-msg="1" href="#" target="_blank" rel="noopener" hidden>Send on WhatsApp</a>
         </div>
         <p class="hint">Nothing is sent from this page. Your message goes only when you paste it in the chat.</p>
       </aside>
@@ -581,7 +590,7 @@ def bag():
   <div class="wrap">
     <span class="eyebrow">Enquiry bag</span>
     <h1>Your <em>looks</em></h1>
-    <p class="lede">Send everything in one message. We reply with price and availability.</p>
+    <p class="lede">Send everything in one message. We reply to confirm availability and delivery.</p>
   </div>
 </section>
 <section class="section" style="padding-top:0">
@@ -614,21 +623,41 @@ def images():
         r.crop((0, top, 1200, top + 630)).save(out / f"{l['id']}-og.jpg", "JPEG", quality=82, optimize=True, progressive=True)
     logo = Image.open(SRC / "img-orig" / "logo.png").convert("RGBA").resize((728, 203), Image.LANCZOS)
     logo.save(out / "logo.png", optimize=True)
-    tile = Image.new("RGB", (180, 180), "#FBF3F2")
+    tile = Image.new("RGB", (180, 180), "#FFFDFC")
     mark = logo.resize((150, round(203 * 150 / 728)), Image.LANCZOS)
     tile.paste(mark, (15, (180 - mark.height) // 2), mark)
     tile.save(DIST / "apple-touch-icon.png", optimize=True)
 
 
+def relative(page, prefix):
+    """Turn root-absolute links (/collection, /img/x.webp) into relative ones, so the site works both on the
+    custom domain and under username.github.io/repo/. The 404 page keeps absolute links (it can be served at any depth)."""
+    page = re.sub(r'(href|src)="/([^"/][^"]*|)"', lambda m: f'{m[1]}="{prefix}{m[2]}"' if (prefix or m[2]) else f'{m[1]}="./"', page)
+    return re.sub(r'srcset="([^"]*)"', lambda m: 'srcset="' + m[1].replace("/img/", prefix + "img/") + '"', page)
+
+
+def fonts():
+    """Fonts are self-hosted from src/fonts/ (both open source, SIL OFL): Fraunces for headings, a free soft serif
+    close to Larken, and Jost for text. To switch to Larken later, add its .woff2 files and change the two
+    Fraunces lines below plus --display in src/base.css."""
+    (DIST / "fonts").mkdir(exist_ok=True)
+    for f in (SRC / "fonts").iterdir(): shutil.copy(f, DIST / "fonts" / f.name)
+    face = '@font-face{{font-family:"{}";src:url("../fonts/{}") format("woff2");font-weight:{};font-style:{};font-display:swap}}\n'
+    return (face.format("Fraunces", "fraunces-latin-full-normal.woff2", "100 900", "normal") +
+            face.format("Fraunces", "fraunces-latin-full-italic.woff2", "100 900", "italic") +
+            face.format("Jost", "jost-latin-wght-normal.woff2", "100 900", "normal"))
+
+
 def main():
     global VER
-    if DIST.exists(): shutil.rmtree(DIST)
-    DIST.mkdir()
+    DIST.mkdir(exist_ok=True)
+    for c in DIST.iterdir():      # empty dist/ but keep the folder itself, so a running preview server survives a rebuild
+        shutil.rmtree(c) if c.is_dir() else c.unlink()
     images()
-    css = (SRC / "base.css").read_text() + "\n" + (SRC / "extra.css").read_text()
+    css = fonts() + (SRC / "base.css").read_text() + "\n" + (SRC / "extra.css").read_text()
     js = (SRC / "site.js").read_text()
     data = {"shop": {k: SHOP[k] for k in ("instagram", "whatsapp", "currency", "mode", "checkoutUrl")},
-            "looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "price", "sizes", "pos")} for l in LOOKS}}
+            "looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "priceBySize", "sizes", "pos")} for l in LOOKS}}
     data_js = "window.BLUSH = " + json.dumps(data, ensure_ascii=False) + ";\n"
     VER = hashlib.sha1((css + js + data_js).encode()).hexdigest()[:8]
     (DIST / "assets").mkdir()
@@ -641,16 +670,14 @@ def main():
     for i, l in enumerate(LOOKS):
         pages[f"looks/{l['id']}.html"] = look(l, LOOKS[i - 1], LOOKS[(i + 1) % len(LOOKS)])
     for p, h in pages.items():
-        (DIST / p).write_text(h)
-    (DIST / "favicon.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#FBF3F2"/><g fill="#DC86AA" transform="translate(2.4 2.6) scale(.8)"><circle cx="12" cy="5.5" r="3.4"/><circle cx="18.2" cy="10" r="3.4"/><circle cx="15.8" cy="17.2" r="3.4"/><circle cx="8.2" cy="17.2" r="3.4"/><circle cx="5.8" cy="10" r="3.4"/></g><circle cx="12" cy="11.7" r="1.9" fill="#FBF3F2"/></svg>')
+        (DIST / p).write_text(h if p == "404.html" else relative(h, "../" * p.count("/")))
+    (DIST / "favicon.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#FFFDFC"/><g fill="#DC86AA" transform="translate(2.4 2.6) scale(.8)"><circle cx="12" cy="5.5" r="3.4"/><circle cx="18.2" cy="10" r="3.4"/><circle cx="15.8" cy="17.2" r="3.4"/><circle cx="8.2" cy="17.2" r="3.4"/><circle cx="5.8" cy="10" r="3.4"/></g><circle cx="12" cy="11.7" r="1.9" fill="#FFFDFC"/></svg>')
     urls = ["/", "/collection", "/our-story", "/size-care", "/contact"] + [f"/looks/{l['id']}" for l in LOOKS]
     (DIST / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
                                       "".join(f"  <url><loc>{SHOP['domain']}{'' if u == '/' else u}</loc></url>\n" for u in urls) + "</urlset>\n")
     (DIST / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SHOP['domain']}/sitemap.xml\n")
-    (ROOT / "vercel.json").write_text(json.dumps({
-        "outputDirectory": "dist", "cleanUrls": True, "trailingSlash": False,
-        "headers": [{"source": "/img/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=2592000"}]},
-                    {"source": "/assets/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]}]}, indent=2))
+    (DIST / "CNAME").write_text(SHOP["domain"].split("//")[1] + "\n")   # custom domain for GitHub Pages
+    (DIST / ".nojekyll").write_text("")
     total = sum(f.stat().st_size for f in DIST.rglob("*") if f.is_file())
     print(f"built {len(pages)} pages, {total/1e6:.2f} MB, version {VER}")
 

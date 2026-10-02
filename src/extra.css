@@ -106,7 +106,7 @@ a.card{text-decoration:none;color:inherit}
 .bag{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(26px,5vw,72px);align-items:start}
 .bag-items{border-top:1px solid var(--line)}
 .bag-item{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:18px;padding:20px 0;border-bottom:1px solid var(--line);align-items:center}
-.bag-item .arch{aspect-ratio:3/4;border-radius:999px 999px 10px 10px}
+.bag-item .arch{aspect-ratio:3/4}
 .bag-item h3{font-size:1.5rem}
 .bag-item h3 a{text-decoration:none}
 .bag-item .meta{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
@@ -151,3 +151,23 @@ a.card{text-decoration:none;color:inherit}
   .hero h1{font-size:clamp(2.7rem,13vw,3.6rem)}
   .hero-cta .btn,.dlg-cta .btn{flex:1 1 100%}
 }
+
+/* ───────── Fraunces (soft serif, free alternative to Larken) ───────── */
+body{font-variation-settings:"SOFT" 100,"WONK" 0}
+h1,h2,h3{letter-spacing:-.018em;line-height:1.1}
+h2{font-size:clamp(1.85rem,3.9vw,3.05rem)}
+.hero h1{font-size:clamp(2.6rem,6.2vw,5.3rem);line-height:1.02}
+.page-head h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.06;max-width:18ch}
+.look-body h1{font-size:clamp(2.2rem,4.4vw,3.6rem);line-height:1.04}
+.lede{font-size:clamp(1.08rem,1.6vw,1.3rem);line-height:1.5;font-weight:300}
+.card h3{font-size:1.3rem}
+.step h3,.value h3,.way h3{font-size:1.35rem}
+.bag-item h3{font-size:1.25rem}
+.faq summary{font-size:1.2rem}
+.card .price{font-size:.98rem}
+.look-body .price{font-size:1.35rem}
+.split h2,.prose h2{font-size:clamp(1.7rem,3vw,2.4rem)}
+.size-table td:first-child{font-size:1.1rem}
+.pager a b{font-size:1.1rem}
+.story-copy strong{font-weight:500;color:var(--ink)}
+@media (max-width:620px){.hero h1{font-size:clamp(2.4rem,11.5vw,3.2rem)}.card h3{font-size:1.12rem}.faq summary{font-size:1.08rem}}
