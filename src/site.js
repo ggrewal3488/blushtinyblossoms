@@ -75,6 +75,7 @@
       if (!$$(".filter", filters).some(b => b.dataset.key === k)) k = "all";
       $$(".filter", filters).forEach(b => b.setAttribute("aria-pressed", b.dataset.key === k));
       cards.forEach(c => (c.hidden = !(k === "all" || c.dataset.cat.split(" ").includes(k))));
+      const n = cards.filter(c => !c.hidden).length, cnt = $("#count"); if (cnt) cnt.textContent = n + (n === 1 ? " look" : " looks");
       if (push) history.replaceState(null, "", k === "all" ? location.pathname : "?show=" + k);
     };
     filters.addEventListener("click", e => { const b = e.target.closest(".filter"); if (b) setFilter(b.dataset.key, true); });
@@ -86,21 +87,87 @@
   if (lookEl) {
     const l = LOOKS[lookEl.dataset.look];
     let size = null;
-    const msgEl = $("#look-msg"), wa = $("#look-wa"), added = $("#look-added"), sizes = $("#look-sizes");
-    const message = () => "Hi Blush! I'd like to enquire about " + fullName(l) + (size ? " in size " + size : "") + (priceOf(l, size) ? " (" + money(priceOf(l, size)) + ")" : "") + ". Please confirm availability" + (l.priceBySize ? "." : " and share the price.");
-    const refresh = () => { msgEl.textContent = message(); if (SHOP.whatsapp) { wa.hidden = false; wa.href = waLink(message()); } };
-    sizes.addEventListener("click", e => {
-      const b = e.target.closest("button"); if (!b) return;
+    const msgEl = $("#look-msg"), buy = $("#look-buy"), added = $("#look-added"), sizes = $("#look-sizes"), chosen = $("#size-chosen");
+    const mrpOf = s => (l.mrpBySize && s ? l.mrpBySize[s] : null);
+    const message = () => "Hi Blush! I'd like to order " + fullName(l) + (size ? " in size " + size : "") + (priceOf(l, size) ? " (" + money(priceOf(l, size)) + ")" : "") + ".\n" + location.href.split("?")[0] + "\nPlease confirm availability" + (l.priceBySize ? "." : " and share the price.");
+    const refresh = () => {
+      if (msgEl) msgEl.textContent = message();
+      if (SHOP.whatsapp && buy) buy.href = waLink(message());
+    };
+    const paintPrice = () => {
+      $("#look-price").textContent = priceText(l, size);
+      const m = $("#look-mrp"), sv = $("#look-save");
+      const mp = size ? mrpOf(size) : (l.mrpBySize ? Math.min(...Object.values(l.mrpBySize)) : null);
+      const pp = size ? priceOf(l, size) : (l.priceBySize ? Math.min(...Object.values(l.priceBySize)) : null);
+      if (m) { m.hidden = !(mp && pp && mp > pp); if (mp) m.textContent = money(mp); }
+      if (sv && mp && pp) sv.textContent = "Sale · Save " + Math.round(100 * (1 - pp / mp)) + "%";
+    };
+    if (sizes) sizes.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b || b.disabled) return;
       size = b.textContent; $$("button", sizes).forEach(x => x.setAttribute("aria-pressed", x === b));
-      added.textContent = ""; $("#look-price").textContent = priceText(l, size); refresh();
+      if (chosen) chosen.textContent = size;
+      added.textContent = ""; paintPrice(); refresh();
     });
+    const needSize = () => { if (l.sizes.length && !size) { added.textContent = "Please choose a size first."; sizes.querySelector("button:not(:disabled)")?.focus(); return true; } return false; };
     $("#look-add").addEventListener("click", () => {
-      if (l.sizes.length && !size) { added.textContent = "Choose a size first."; return; }
+      if (needSize()) return;
       Bag.add(l.id, size);
-      added.innerHTML = "Added to your enquiry bag. <a href=\"" + ROOT + "bag\">View bag</a>";
+      added.innerHTML = "Added to your bag. <a href=\"" + ROOT + "bag\">View bag</a>";
     });
-    $("#look-copy").addEventListener("click", e => copy(message(), e.currentTarget, msgEl));
+    if (buy && SHOP.whatsapp) buy.addEventListener("click", e => { if (needSize()) e.preventDefault(); });
+    const lc = $("#look-copy"); if (lc) lc.addEventListener("click", e => copy(message(), e.currentTarget, msgEl));
+    const cl = $("#copy-link");
+    if (cl) cl.addEventListener("click", async () => {
+      const out = $("#link-copied");
+      try { await navigator.clipboard.writeText(cl.dataset.url); out.textContent = "Link copied"; } catch (e) { out.textContent = cl.dataset.url; }
+      setTimeout(() => (out.textContent = ""), 2600);
+    });
     refresh();
+
+    /* gallery: swipe/scroll track, thumbnails, arrows, lightbox */
+    const track = $("#track");
+    if (track) {
+      const slides = $$(".slide", track), thumbs = $$(".thumbs button");
+      let cur = 0;
+      const go = i => { cur = (i + slides.length) % slides.length; track.scrollTo({ left: track.clientWidth * cur }); };
+      const mark = () => {
+        cur = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+        thumbs.forEach((t, i) => t.setAttribute("aria-selected", i === cur));
+      };
+      track.addEventListener("scroll", () => requestAnimationFrame(mark), { passive: true });
+      thumbs.forEach((t, i) => t.addEventListener("click", () => go(i)));
+      $$(".stage .nav-arrow").forEach(b => b.addEventListener("click", () => go(cur + (b.classList.contains("next") ? 1 : -1))));
+      const lb = $("#lightbox"), lbImg = $("#lb-img");
+      const full = i => { const im = $("img", slides[i]); return im.srcset.split(",").map(x => x.trim().split(" ")[0]).pop(); };
+      const show = i => { cur = (i + slides.length) % slides.length; lbImg.src = full(cur); lbImg.alt = $("img", slides[cur]).alt; };
+      if (lb && lb.showModal) {
+        slides.forEach((s, i) => s.addEventListener("click", () => { show(i); lb.showModal(); }));
+        $$("[data-lb]", lb).forEach(b => b.addEventListener("click", () => show(cur + +b.dataset.lb)));
+        lbImg.addEventListener("click", () => lb.close());
+        lb.addEventListener("close", () => go(cur));
+        lb.addEventListener("keydown", e => { if (e.key === "ArrowRight") show(cur + 1); if (e.key === "ArrowLeft") show(cur - 1); });
+      }
+    }
+  }
+
+  /* size guide dialog + cm/in switch (look pages and the size guide page) */
+  $$("[data-open]").forEach(b => b.addEventListener("click", () => { const d = document.getElementById(b.dataset.open); if (d && d.showModal) d.showModal(); }));
+  $$("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
+  $$(".chart").forEach(c => c.addEventListener("click", e => {
+    const b = e.target.closest("[data-u]"); if (!b) return;
+    $$(".chart").forEach(x => { x.dataset.unit = b.dataset.u; $$("[data-u]", x).forEach(y => y.setAttribute("aria-pressed", y.dataset.u === b.dataset.u)); });
+  }));
+
+  /* "You may also like" rail arrows */
+  const rail = $("#rail");
+  if (rail) $$("[data-rail]").forEach(b => b.addEventListener("click", () => rail.scrollBy({ left: +b.dataset.rail * rail.clientWidth * 0.8 })));
+
+  /* FAQ: open the question group that a link points to, highlight the section in view */
+  const faqNav = $(".faq-nav:not(.toc)");
+  if (faqNav) {
+    const links = $$("a", faqNav);
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) links.forEach(a => a.classList.toggle("on", a.hash === "#" + en.target.id)); }), { rootMargin: "-30% 0px -60% 0px" });
+    $$(".faq-sec").forEach(s => io.observe(s));
   }
 
   /* ── Bag page ── */
