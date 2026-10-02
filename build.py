@@ -20,7 +20,7 @@ SHOP = {
     "currency": "₹",
     "mode": "enquiry",       # "enquiry" now. Switch to "store" once prices and checkoutUrl are set.
     "checkoutUrl": "",       # payment / checkout page, used only in "store" mode
-    "email": "",             # e.g. "care@blushtinyblossoms.co.in". Empty hides email everywhere.
+    "email": "enquiry@blushtinyblossoms.co.in",   # empty hides email everywhere
     "hours": "Monday to Saturday, 10 am to 6 pm",   # customer support hours (closed Sundays)
     "city": "Shahpur Jat, New Delhi",
 }
