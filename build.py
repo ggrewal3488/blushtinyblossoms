@@ -376,8 +376,8 @@ def home():
     <div class="care">
       <div>
         <span class="eyebrow">Sizing &amp; make</span>
-        <h2>Three to thirteen, <em style="color:#F0B4CC">one relaxed fit</em></h2>
-        <p style="margin-top:22px"><a class="btn" style="background:#FFF6F7;color:var(--ink);border-color:#FFF6F7" href="/size-care">Size &amp; care guide</a></p>
+        <h2>Three to thirteen, <em>one relaxed fit</em></h2>
+        <p style="margin-top:22px"><a class="btn" href="/size-care">Size &amp; care guide</a></p>
       </div>
       <dl>
         <div><dt>Sizes</dt><dd><div class="sizes">{size_chips()}</div>Relaxed fit with side-seam pockets in the shararas. The tiered volume is scaled up for the older sizes.</dd></div>
@@ -831,7 +831,7 @@ def size_care():
     <div class="care" style="margin-top:0">
       <div>
         <span class="eyebrow">Fabric &amp; care</span>
-        <h2>Looked after, <em style="color:#F0B4CC">it lasts</em></h2>
+        <h2>Looked after, <em>it lasts</em></h2>
       </div>
       <dl>
         <div><dt>Fabric</dt><dd>Cotton bases for the printed sets and tulle for the dresses, with gota, sequin and resham handwork.</dd></div>
