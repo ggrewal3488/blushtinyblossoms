@@ -243,7 +243,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="brand" href="/"><img src="/img/logo-round.png" alt="Blush tiny blossoms" width="320" height="320" loading="lazy"></a>
+        <a class="brand" href="/"><img src="/img/logo-full.png" alt="Blush tiny blossoms" width="{DIMS['logo-full'][0]}" height="{DIMS['logo-full'][1]}" loading="lazy"></a>
         <p>Festive wear for little ones, made in limited pieces at our {SHOP['city']} atelier.</p>
       </div>
       <div>
@@ -942,16 +942,19 @@ def images():
             s = 1200 / im.width; r = im.resize((1200, round(im.height * s)), Image.LANCZOS)
             top = max(0, min(r.height - 630, round((r.height - 630) * fy)))
             r.crop((0, top, 1200, top + 630)).save(out / f"{l['id']}-og.jpg", "JPEG", quality=82, optimize=True, progressive=True)
-    # Logo: src/img-orig/logo.png (the horizontal "BLUSH tiny blossoms" lockup, transparent) and logo-round.png (the round badge).
+    # Logo: src/img-orig/logo.png (header: BLUSH + tiny blossoms), logo-full.png (footer, with the heart), logo-icon.png (the flower: favicon and phone icon). All transparent.
     logo = Image.open(SRC / "img-orig" / "logo.png").convert("RGBA")
     logo = logo.resize((728, round(logo.height * 728 / logo.width)), Image.LANCZOS)
     logo.save(out / "logo.png", optimize=True)
     DIMS["logo"] = logo.size
-    rnd = Image.open(SRC / "img-orig" / "logo-round.png").convert("RGBA")
-    rnd.resize((320, 320), Image.LANCZOS).save(out / "logo-round.png", optimize=True)
-    tile = Image.new("RGB", (180, 180), "#FFF8F6"); tile.paste(rnd.resize((180, 180), Image.LANCZOS), (0, 0), rnd.resize((180, 180), Image.LANCZOS))
-    tile.save(DIST / "apple-touch-icon.png", optimize=True)
-    rnd.resize((64, 64), Image.LANCZOS).save(DIST / "favicon.png", optimize=True)
+    full = Image.open(SRC / "img-orig" / "logo-full.png").convert("RGBA")
+    full = full.resize((560, round(full.height * 560 / full.width)), Image.LANCZOS); full.save(out / "logo-full.png", optimize=True)
+    DIMS["logo-full"] = full.size
+    icon = Image.open(SRC / "img-orig" / "logo-icon.png").convert("RGBA")
+    def tile(n, pad):
+        t = Image.new("RGBA", (n, n), "#FFFAF7"); m = icon.resize((n - 2 * pad, n - 2 * pad), Image.LANCZOS); t.alpha_composite(m, (pad, pad)); return t
+    tile(180, 30).convert("RGB").save(DIST / "apple-touch-icon.png", optimize=True)
+    tile(64, 4).save(DIST / "favicon.png", optimize=True)
 
 
 def relative(page, prefix):

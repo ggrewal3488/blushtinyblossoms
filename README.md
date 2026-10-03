@@ -28,7 +28,7 @@ Preview locally with `python3 serve.py`, then open http://127.0.0.1:8123.
 
 ## Logo
 
-`src/img-orig/logo.png` (horizontal lockup, transparent) is used in the header; `src/img-orig/logo-round.png` (round badge) in the footer, favicon and phone home-screen icon.
+`src/img-orig/logo.png` (BLUSH + tiny blossoms, transparent) is used in the header, `logo-full.png` (with the heart) in the footer, and `logo-icon.png` (the flower) for the favicon and phone home-screen icon.
 
 ## Fonts
 
