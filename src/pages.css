@@ -191,3 +191,22 @@ dialog.lightbox .close{position:fixed;top:16px;right:16px;float:none;margin:0}
 .sizepick button[aria-pressed="true"],.unit button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:#fff}
 .nav-arrow:hover{background:var(--btn);border-color:var(--btn);color:#fff}
 .skip{background:var(--btn)}
+
+/* checkout + order confirmation */
+.page-head.slim{padding-bottom:clamp(20px,3vw,36px)}
+.checkout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr);gap:clamp(26px,5vw,72px);align-items:start}
+.co-h{grid-column:1/-1;font-size:1.35rem;margin-top:8px}
+.co-form .btn{grid-column:1/-1;width:100%;border-radius:2px;padding:1.15em 2em}
+.co-form .hint{grid-column:1/-1}
+.co-form .hint a{color:var(--rose-deep)}
+.co-err{grid-column:1/-1;color:#B3261E;font-size:.92rem;margin:0;min-height:1.2em}
+.co-item{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.co-item img{width:56px;height:72px;object-fit:cover;border-radius:2px}
+.co-item b{font-weight:400;display:block}
+.co-item span{font-size:.84rem;color:var(--ink-soft)}
+.sum-row.total{border-top:1px solid var(--line);padding-top:12px;font-size:1.1rem}
+.sum-row.total b{font-weight:500}
+.btn:disabled{opacity:.6;cursor:wait}
+.order-done{min-height:50vh;justify-content:center}
+.ord-box{width:min(520px,100%);background:var(--milk);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:flex;flex-direction:column;gap:10px;text-align:left}
+@media (max-width:820px){.checkout{grid-template-columns:1fr}.co-sum{order:-1}}
