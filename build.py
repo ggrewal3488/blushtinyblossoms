@@ -942,7 +942,7 @@ def images():
             s = 1200 / im.width; r = im.resize((1200, round(im.height * s)), Image.LANCZOS)
             top = max(0, min(r.height - 630, round((r.height - 630) * fy)))
             r.crop((0, top, 1200, top + 630)).save(out / f"{l['id']}-og.jpg", "JPEG", quality=82, optimize=True, progressive=True)
-    # Logo: src/img-orig/logo.png (header: BLUSH + tiny blossoms), logo-full.png (footer, with the heart), logo-icon.png (the flower: favicon and phone icon). All transparent.
+    # Logo: src/img-orig/logo.png (header: BLUSH + tiny blossoms), logo-full.png (footer), logo-icon.png (the bird: favicon and phone icon). All transparent.
     logo = Image.open(SRC / "img-orig" / "logo.png").convert("RGBA")
     logo = logo.resize((728, round(logo.height * 728 / logo.width)), Image.LANCZOS)
     logo.save(out / "logo.png", optimize=True)
