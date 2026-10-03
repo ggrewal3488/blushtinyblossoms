@@ -173,3 +173,21 @@ dialog.lightbox .close{position:fixed;top:16px;right:16px;float:none;margin:0}
 .foot .brand img{height:auto;width:150px}
 @media (min-width:821px) and (max-width:1180px){.site-head .brand img{height:60px}}
 @media (max-width:820px){.site-head .brand img{height:50px}}
+
+/* lighter palette (Oct 2026): no dark plum blocks; soft blush surfaces and rose buttons to match the pastel logo */
+:root{--btn:#B5566F;--btn-hover:#97445C;--blushbg:#FBE7EC}
+.announce{background:var(--blushbg);color:var(--ink);border-bottom:1px solid var(--line)}
+.care{background:#FDF1F3;color:var(--ink);border:1px solid var(--line)}
+.care .eyebrow,.care dt{color:var(--rose-deep)}
+.care h2{color:var(--ink)}
+.care h2 em{color:var(--rose-deep)}
+.care p{color:var(--ink-soft)}
+.care dd{color:var(--ink-soft)}
+.care .sizes span{border-color:#EBCFD6;color:var(--ink);background:var(--milk)}
+.btn{background:var(--btn);border-color:var(--btn);color:#fff}
+.btn:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:#D9B3BE}
+.btn.ghost:hover{background:var(--btn);color:#fff;border-color:var(--btn)}
+.sizepick button[aria-pressed="true"],.unit button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:#fff}
+.nav-arrow:hover{background:var(--btn);border-color:var(--btn);color:#fff}
+.skip{background:var(--btn)}
