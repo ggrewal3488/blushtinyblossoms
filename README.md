@@ -30,6 +30,21 @@ Preview locally with `python3 serve.py`, then open http://127.0.0.1:8123.
 
 `src/img-orig/logo.png` (the bird + BLUSH + tiny blossoms, transparent) is used in the header, `logo-full.png` in the footer, and `logo-icon.png` (the bird) for the favicon and phone home-screen icon.
 
+## Online payments (Cashfree)
+
+The site has a Checkout page (`/checkout`) and an order confirmation page (`/order`). They switch on when `SHOP["checkoutApi"]` in `build.py` holds the address of the checkout service. While it is empty the site stays in enquiry mode.
+
+The checkout service is `worker/checkout-worker.js`, a Cloudflare Worker (free plan). It keeps the Cashfree secret key, prices every order from the live `/assets/catalog.json` (so prices can't be changed in the browser), adds delivery (free above `POLICY["free_above"]`), creates the Cashfree order and confirms payment.
+
+Set up once:
+1. Cloudflare → Workers & Pages → Create → Worker → name it `blush-checkout` → Deploy → Edit code → replace everything with `worker/checkout-worker.js` → Deploy.
+2. Worker → Settings → Variables and Secrets: `CASHFREE_APP_ID` (text), `CASHFREE_SECRET` (Secret), `CASHFREE_ENV` = `sandbox`, `SITE_URL` = `https://blushtinyblossoms.co.in`.
+3. Put the worker address (`https://blush-checkout.<you>.workers.dev`) in `SHOP["checkoutApi"]`, run `python3 build.py`, upload.
+4. Cashfree → Developers → Whitelisting: add `blushtinyblossoms.co.in`.
+5. Optional order emails: Cashfree → Developers → Webhooks → add `https://blush-checkout.<you>.workers.dev/webhook`; in the worker add `RESEND_API_KEY` (Secret, from resend.com) and `NOTIFY_EMAIL`.
+
+Going live: swap in the production App ID and Secret, set `CASHFREE_ENV` = `production` in Cloudflare and `SHOP["cashfreeMode"]` = `"production"` in `build.py`, rebuild and upload. Every order also shows in the Cashfree dashboard with the address and items in its order tags.
+
 ## Fonts
 
 Both fonts are open source and hosted with the site from `src/fonts/` (no Google Fonts request): **Fraunces** for headings, a free soft serif close to Larken, and **Jost** for text. To use Larken itself later, add its licensed `.woff2` files to `src/fonts/` and change `fonts()` in `build.py` and `--display` in `src/base.css`.

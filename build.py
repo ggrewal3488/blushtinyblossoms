@@ -18,8 +18,10 @@ SHOP = {
     "instagram": "blushtinyblossoms",
     "whatsapp": "919899090496",   # e.g. "919812345678" (country code, no +). Empty hides every WhatsApp button.
     "currency": "₹",
-    "mode": "enquiry",       # "enquiry" now. Switch to "store" once prices and checkoutUrl are set.
-    "checkoutUrl": "",       # payment / checkout page, used only in "store" mode
+    # Online payment (Cashfree). Paste the checkout service address (from Cloudflare) here to switch on the
+    # Checkout button and the /checkout page. Empty keeps the site in enquiry mode (WhatsApp / Instagram only).
+    "checkoutApi": "https://muddy-cell-d465.ckanak.workers.dev",       # e.g. "https://blush-checkout.yourname.workers.dev"
+    "cashfreeMode": "sandbox",   # "sandbox" while testing, "production" when live (must match CASHFREE_ENV in Cloudflare)
     "email": "enquiry@blushtinyblossoms.co.in",   # empty hides email everywhere
     "hours": "Monday to Saturday, 10 am to 6 pm",   # customer support hours (closed Sundays)
     "city": "Shahpur Jat, New Delhi",
@@ -147,6 +149,7 @@ IG = f"https://www.instagram.com/{SHOP['instagram']}/"
 WA_NUM = SHOP["whatsapp"]
 WA_DISPLAY = (f"+{WA_NUM[:2]} {WA_NUM[2:7]} {WA_NUM[7:]}" if len(WA_NUM) == 12 else f"+{WA_NUM}") if WA_NUM else ""
 P = POLICY
+STORE = bool(SHOP["checkoutApi"])
 DM = f"https://ig.me/m/{SHOP['instagram']}"
 DIMS = {}
 
@@ -194,7 +197,7 @@ FOOT_CATS = "".join(f'<li><a href="/collection?show={k}">{lab}</a></li>' for k, 
 NAV = [("/collection", "Collection"), ("/our-story", "Our Story"), ("/size-care", "Size Guide"), ("/faq", "FAQ"), ("/contact", "Contact")]
 
 
-def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None, noindex=False):
+def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None, noindex=False, extra_head=""):
     url = SHOP["domain"] + ("" if path == "/" else path)
     links = "".join(f'<a href="{h}"{" aria-current=page" if h == active else ""}>{t}</a>' for h, t in NAV)
     ld = "".join(f'<script type="application/ld+json">{json.dumps(j, ensure_ascii=False)}</script>' for j in (jsonld if isinstance(jsonld, list) else [jsonld] if jsonld else []))
@@ -220,7 +223,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <link rel="preload" href="/fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v={VER}">
-{ld}
+{ld}{extra_head}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -516,7 +519,7 @@ def look(l, prev, nxt):
       </div>
       <div class="buy">
         <button class="btn" type="button" id="look-add">Add to bag</button>
-        <a class="btn ghost" id="look-buy" href="{"#" if WA_NUM else DM}" target="_blank" rel="noopener">Buy it now</a>
+        {'<button class="btn ghost" id="look-buy" type="button">Buy it now</button>' if STORE else f'<a class="btn ghost" id="look-buy" href="{"#" if WA_NUM else DM}" target="_blank" rel="noopener">Buy it now</a>'}
         <p class="added" id="look-added" role="status"></p>
       </div>
       {notice}
@@ -649,7 +652,7 @@ def faq_sections():
     email = f', email <a href="mailto:{SHOP["email"]}">{SHOP["email"]}</a>' if SHOP["email"] else ""
     return [
         ("ordering", "Ordering", [
-            ("How do I place an order?", f'Choose a look, pick a size and add it to your <a href="/bag">bag</a>. Send the bag to us on WhatsApp or Instagram in one tap. We confirm availability, fit and delivery, then share a secure payment link. Your order is confirmed once payment is received.'),
+            ("How do I place an order?", (f'Choose a look, pick a size and add it to your <a href="/bag">bag</a>. Tap Checkout, enter your delivery address and pay securely with UPI, card or net banking. You can also send your bag to us on WhatsApp and we will share a payment link.' if STORE else f'Choose a look, pick a size and add it to your <a href="/bag">bag</a>. Send the bag to us on WhatsApp or Instagram in one tap. We confirm availability, fit and delivery, then share a secure payment link.') + ' Your order is confirmed once payment is received.'),
             ("Do I need an account?", "No. There is no account or sign-up. Your bag is saved on your device and your order is confirmed over chat."),
             ("Can I get help placing my order?", f"Of course. Message us on {contact} and we will help you choose the look and size."),
             ("Can I amend my order?", "You can change looks or sizes until payment is made. Once an order is confirmed and goes into finishing at the atelier, we are unable to amend it."),
@@ -906,15 +909,77 @@ def contact():
 def bag():
     body = f"""<section class="page-head">
   <div class="wrap">
-    <span class="eyebrow">Enquiry bag</span>
+    <span class="eyebrow">{"Your bag" if STORE else "Enquiry bag"}</span>
     <h1>Your <em>looks</em></h1>
-    <p class="lede">Send everything in one message. We reply to confirm availability and delivery.</p>
+    <p class="lede">{"Check out securely online, or send your bag to us on WhatsApp." if STORE else "Send everything in one message. We reply to confirm availability and delivery."}</p>
   </div>
 </section>
 <section class="section" style="padding-top:0">
   <div class="wrap" id="bag-root"><noscript><p class="center">Please enable JavaScript to use the enquiry bag, or <a href="{DM}">message us on Instagram</a>.</p></noscript></div>
 </section>"""
     return layout("/bag", "Enquiry bag · Blush Tiny Blossoms", "The looks you would like to enquire about.", body, noindex=True)
+
+
+STATES = ["Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh", "Chhattisgarh",
+          "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir",
+          "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+          "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+          "Uttarakhand", "West Bengal"]
+
+
+def checkout_page():
+    states = '<option value="">Select state</option>' + "".join(f"<option>{s}</option>" for s in STATES)
+    body = f"""<section class="page-head slim">
+  <div class="wrap">
+    <span class="eyebrow">Checkout</span>
+    <h1>Almost <em>yours</em></h1>
+    <p class="lede">Delivery details, then pay securely with UPI, card or net banking.</p>
+  </div>
+</section>
+<section class="section" style="padding-top:0">
+  <div class="wrap checkout" id="checkout-root" data-api="{e(SHOP['checkoutApi'])}">
+    <form class="form co-form" id="co-form" novalidate>
+      <h2 class="co-h">Contact</h2>
+      <label class="full">Full name<input name="name" type="text" autocomplete="name" required></label>
+      <label>Mobile number<input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile" required></label>
+      <label>Email<input name="email" type="email" autocomplete="email" placeholder="For your receipt"></label>
+      <h2 class="co-h">Delivery address</h2>
+      <label class="full">Address<input name="address1" type="text" autocomplete="address-line1" placeholder="House / flat, building, street" required></label>
+      <label class="full">Area / landmark<input name="address2" type="text" autocomplete="address-line2" placeholder="Optional"></label>
+      <label>City<input name="city" type="text" autocomplete="address-level2" required></label>
+      <label>PIN code<input name="pin" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="6" required></label>
+      <label class="full">State<select name="state" autocomplete="address-level1" required>{states}</select></label>
+      <label class="full">Note for us<textarea name="note" placeholder="Occasion date, gift message, anything else (optional)"></textarea></label>
+      <p class="co-err" id="co-err" role="alert"></p>
+      <button class="btn co-pay" type="submit" id="co-pay">Pay securely</button>
+      <p class="hint">Payments are processed by Cashfree Payments. We never see your card or bank details. By paying you agree to our <a href="/terms">terms</a>.</p>
+    </form>
+    <aside class="preview co-sum" aria-live="polite">
+      <span class="eyebrow">Your order</span>
+      <div id="co-items"></div>
+      <div class="sum-row"><span>Subtotal</span><b id="co-sub">–</b></div>
+      <div class="sum-row"><span>Delivery</span><b id="co-ship">–</b></div>
+      <div class="sum-row total"><span>Total</span><b id="co-total">–</b></div>
+      <p class="hint">Free delivery across India above {rupees(P['free_above'])}. Dispatched within {P['dispatch']}.</p>
+      <a class="linkbtn" href="/bag">Edit bag</a>
+    </aside>
+  </div>
+</section>"""
+    return layout("/checkout", "Checkout · Blush Tiny Blossoms", "Secure checkout.", body, noindex=True, extra_head='<script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>')
+
+
+def order_page():
+    body = f"""<section class="section">
+  <div class="wrap cta-band order-done" id="order-root" data-api="{e(SHOP['checkoutApi'])}">
+    <span style="color:var(--rose)">{BLOSSOM.replace('class="blossom"', 'class="blossom" style="width:34px;height:34px"')}</span>
+    <span class="eyebrow" id="ord-eyebrow">Your order</span>
+    <h1 id="ord-title" style="font-size:clamp(2.2rem,5vw,3.6rem)">Checking your <em>payment</em>…</h1>
+    <p class="lede" id="ord-text">This takes a moment. Please don’t close the page.</p>
+    <div class="ord-box" id="ord-box" hidden></div>
+    <div class="hero-cta" id="ord-cta" hidden></div>
+  </div>
+</section>"""
+    return layout("/order", "Your order · Blush Tiny Blossoms", "Order confirmation.", body, noindex=True)
 
 
 def notfound():
@@ -984,7 +1049,7 @@ def main():
     images()
     css = fonts() + "\n".join((SRC / f).read_text() for f in ("base.css", "extra.css", "pages.css"))
     js = (SRC / "site.js").read_text()
-    data = {"shop": {k: SHOP[k] for k in ("instagram", "whatsapp", "currency", "mode", "checkoutUrl")},
+    data = {"shop": {**{k: SHOP[k] for k in ("instagram", "whatsapp", "currency", "checkoutApi", "cashfreeMode")}, "freeAbove": P["free_above"], "shipFee": P["ship_fee"]},
             "looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "priceBySize", "mrpBySize", "sizes", "soldout", "pos", "gallery")} for l in LOOKS}}
     data_js = "window.BLUSH = " + json.dumps(data, ensure_ascii=False) + ";\n"
     VER = hashlib.sha1((css + js + data_js).encode()).hexdigest()[:8]
@@ -992,8 +1057,12 @@ def main():
     (DIST / "assets/site.css").write_text(css)
     (DIST / "assets/site.js").write_text(js)
     (DIST / "assets/data.js").write_text(data_js)
+    # Prices for the checkout service: it reads this file from the live site, so prices are always checked against the site.
+    cat = {"looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "priceBySize", "soldout")} for l in LOOKS},
+           "shipping": {"free_above": P["free_above"], "fee": P["ship_fee"]}}
+    (DIST / "assets/catalog.json").write_text(json.dumps(cat, ensure_ascii=False))
     pages = {"index.html": home(), "collection.html": collection(), "our-story.html": story(), "size-care.html": size_care(),
-             "faq.html": faq_page(), "terms.html": terms_page(),
+             "faq.html": faq_page(), "terms.html": terms_page(), "checkout.html": checkout_page(), "order.html": order_page(),
              "contact.html": contact(), "bag.html": bag(), "404.html": notfound()}
     (DIST / "looks").mkdir()
     for i, l in enumerate(LOOKS):
