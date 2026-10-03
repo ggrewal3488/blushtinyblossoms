@@ -11,6 +11,7 @@
   const fromPrice = l => (l.priceBySize ? "From " + money(Math.min(...Object.values(l.priceBySize))) : "Price on request");
   const priceText = (l, size) => (priceOf(l, size) ? money(priceOf(l, size)) : fromPrice(l));
   const igDM = "https://ig.me/m/" + SHOP.instagram;
+  const shipFor = sub => (sub >= SHOP.freeAbove ? 0 : SHOP.shipFee);
   const waLink = text => "https://wa.me/" + SHOP.whatsapp + (text ? "?text=" + encodeURIComponent(text) : "");
 
   /* ── Bag: the one place that knows how items are stored. Swap this for a real cart API when the store opens. ── */
@@ -114,7 +115,8 @@
       Bag.add(l.id, size);
       added.innerHTML = "Added to your bag. <a href=\"" + ROOT + "bag\">View bag</a>";
     });
-    if (buy && SHOP.whatsapp) buy.addEventListener("click", e => { if (needSize()) e.preventDefault(); });
+    if (buy && SHOP.checkoutApi) buy.addEventListener("click", () => { if (needSize()) return; Bag.add(l.id, size); location.href = ROOT + "checkout"; });
+    else if (buy && SHOP.whatsapp) buy.addEventListener("click", e => { if (needSize()) e.preventDefault(); });
     const lc = $("#look-copy"); if (lc) lc.addEventListener("click", e => copy(message(), e.currentTarget, msgEl));
     const cl = $("#copy-link");
     if (cl) cl.addEventListener("click", async () => {
@@ -180,7 +182,7 @@
         return;
       }
       const msg = Bag.message(items), sub = Bag.subtotal(items), n = items.reduce((a, i) => a + i.qty, 0);
-      const storeReady = SHOP.mode === "store" && SHOP.checkoutUrl && sub !== null;
+      const storeReady = !!SHOP.checkoutApi && sub !== null;
       bagRoot.innerHTML = '<div class="bag"><div class="bag-items">' + items.map((i, x) => {
         const l = LOOKS[i.id];
         return '<div class="bag-item"><a class="arch" href="' + ROOT + 'looks/' + l.id + '"><img src="' + ROOT + 'img/' + l.id + '-480.webp" alt="" style="object-position:' + l.pos + '"></a>' +
@@ -191,9 +193,10 @@
         '<aside class="preview"><span class="eyebrow">Your enquiry</span>' +
         '<div class="sum-row"><span>Pieces</span><b>' + n + '</b></div>' +
         '<div class="sum-row"><span>' + (sub !== null ? "Subtotal" : "Price") + '</span><b>' + (sub !== null ? money(sub) : "Confirmed on message") + '</b></div>' +
+        (storeReady ? '<div class="sum-row"><span>Delivery</span><b>' + (shipFor(sub) ? money(shipFor(sub)) : "Free") + '</b></div>' : "") +
         '<div class="msg" id="bag-msg">' + esc(msg) + '</div>' +
         '<div class="dlg-cta">' +
-        (storeReady ? '<a class="btn" href="' + esc(SHOP.checkoutUrl) + '">Checkout</a>' : "") +
+        (storeReady ? '<a class="btn" href="' + ROOT + 'checkout">Checkout · ' + money(sub + shipFor(sub)) + '</a>' : "") +
         (SHOP.whatsapp ? '<a class="btn' + (storeReady ? " ghost" : "") + '" href="' + waLink(msg) + '" target="_blank" rel="noopener">Send on WhatsApp</a>' : "") +
         '<button class="btn' + (storeReady || SHOP.whatsapp ? " ghost" : "") + '" type="button" id="bag-copy" data-label="Copy message">Copy message</button>' +
         '<a class="btn ghost" href="' + igDM + '" target="_blank" rel="noopener">Open Instagram chat</a>' +
@@ -211,6 +214,75 @@
       if (e.target.id === "bag-copy") copy(Bag.message(Bag.read()), e.target, $("#bag-msg"));
     });
     render();
+  }
+
+
+  /* ── Checkout (Cashfree) ── */
+  const coRoot = $("#checkout-root");
+  if (coRoot) {
+    const api = coRoot.dataset.api.replace(/\/$/, "");
+    const form = $("#co-form"), err = $("#co-err"), pay = $("#co-pay");
+    const items = Bag.read();
+    const KEY_C = "blush.customer.v1";
+    if (!items.length) { location.replace(ROOT + "bag"); return; }
+    const sub = Bag.subtotal(items);
+    if (sub === null) { err.textContent = "One of the pieces in your bag has no price yet. Please send your bag to us on WhatsApp instead."; pay.disabled = true; }
+    const ship = sub === null ? 0 : shipFor(sub);
+    $("#co-items").innerHTML = items.map(i => { const l = LOOKS[i.id]; return '<div class="co-item"><img src="' + ROOT + 'img/' + l.id + '-480.webp" alt="" style="object-position:' + l.pos + '"><div><b>' + esc(fullName(l)) + '</b><span>' + (i.size ? "Size " + esc(i.size) : "") + (i.qty > 1 ? " · × " + i.qty : "") + '</span></div><span>' + (priceOf(l, i.size) ? money(priceOf(l, i.size) * i.qty) : "–") + '</span></div>'; }).join("");
+    $("#co-sub").textContent = sub === null ? "–" : money(sub);
+    $("#co-ship").textContent = sub === null ? "–" : ship ? money(ship) : "Free";
+    $("#co-total").textContent = sub === null ? "–" : money(sub + ship);
+    if (sub !== null) pay.textContent = "Pay " + money(sub + ship) + " securely";
+    try { const saved = JSON.parse(localStorage.getItem(KEY_C) || "{}"); Object.keys(saved).forEach(k => { if (form[k] && !form[k].value) form[k].value = saved[k]; }); } catch (e) {}
+    form.addEventListener("submit", async e => {
+      e.preventDefault(); err.textContent = "";
+      const c = Object.fromEntries(new FormData(form));
+      const miss = ["name", "phone", "address1", "city", "pin", "state"].find(k => !String(c[k] || "").trim());
+      if (miss) { err.textContent = "Please fill in " + form[miss].closest("label").firstChild.textContent.trim().toLowerCase() + "."; form[miss].focus(); return; }
+      if (!/^[6-9]\d{9}$/.test(c.phone.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, ""))) { err.textContent = "Please enter a 10-digit mobile number."; form.phone.focus(); return; }
+      if (!/^[1-9]\d{5}$/.test(c.pin.trim())) { err.textContent = "Please enter a 6-digit PIN code."; form.pin.focus(); return; }
+      try { const keep = { ...c }; delete keep.note; localStorage.setItem(KEY_C, JSON.stringify(keep)); } catch (e) {}
+      pay.disabled = true; const label = pay.textContent; pay.textContent = "Opening secure payment…";
+      try {
+        const r = await fetch(api + "/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map(i => ({ id: i.id, size: i.size, qty: i.qty })), customer: c }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.payment_session_id) throw new Error(d.error || "Could not start the payment. Please try again.");
+        try { sessionStorage.setItem("blush.lastOrder", d.order_id); } catch (e) {}
+        if (typeof Cashfree !== "function") throw new Error("The payment window could not load. Please check your connection and try again.");
+        Cashfree({ mode: d.mode === "production" ? "production" : "sandbox" }).checkout({ paymentSessionId: d.payment_session_id, redirectTarget: "_self" });
+      } catch (x) { err.textContent = x.message; pay.disabled = false; pay.textContent = label; }
+    });
+  }
+
+  /* ── Order confirmation (return from Cashfree) ── */
+  const ordRoot = $("#order-root");
+  if (ordRoot) {
+    const api = ordRoot.dataset.api.replace(/\/$/, "");
+    const id = new URLSearchParams(location.search).get("order_id") || (() => { try { return sessionStorage.getItem("blush.lastOrder"); } catch (e) { return null; } })();
+    const title = $("#ord-title"), text = $("#ord-text"), box = $("#ord-box"), cta = $("#ord-cta"), eb = $("#ord-eyebrow");
+    const done = (t, p, actions) => { title.innerHTML = t; text.textContent = p; cta.innerHTML = actions; cta.hidden = false; };
+    const waBtn = msg => (SHOP.whatsapp ? '<a class="btn ghost" href="' + waLink(msg) + '" target="_blank" rel="noopener">WhatsApp us</a>' : "");
+    const check = async (n) => {
+      if (!id || !api) { done("We couldn’t find <em>that order</em>", "If you were charged, message us with your payment details and we will sort it out.", '<a class="btn" href="' + ROOT + 'collection">Back to the collection</a>' + waBtn("Hi Blush! I need help with a payment.")); return; }
+      try {
+        const r = await fetch(api + "/order-status?order_id=" + encodeURIComponent(id));
+        const d = await r.json();
+        if (r.status === 404 || r.status === 400) { done("We couldn’t find <em>that order</em>", "If you were charged, message us with your payment details and we will sort it out.", '<a class="btn" href="' + ROOT + 'collection">Back to the collection</a>' + waBtn("Hi Blush! I need help with order " + id + ".")); return; }
+        if (!r.ok) throw new Error(d.error);
+        if (d.paid) {
+          Bag.write([]);
+          eb.textContent = "Order " + d.order_id;
+          box.innerHTML = '<div class="sum-row"><span>Items</span><b>' + esc(d.items) + '</b></div><div class="sum-row total"><span>Paid</span><b>' + money(d.amount) + '</b></div>'; box.hidden = false;
+          done("Thank you" + (d.name ? ", " + esc(d.name.split(" ")[0]) : "") + ". <em>It’s yours.</em>", "Your payment is confirmed. We’ll message you on WhatsApp when your order is dispatched.",
+            '<a class="btn" href="' + ROOT + 'collection">Keep browsing</a>' + waBtn("Hi Blush! I just placed order " + d.order_id + "."));
+        } else if (d.status === "ACTIVE" && n < 4) { setTimeout(() => check(n + 1), 2500); }
+        else {
+          done("Payment <em>not completed</em>", "No money was taken for this order, or it is still processing. Your bag is saved, so you can try again.",
+            '<a class="btn" href="' + ROOT + 'checkout">Try again</a>' + waBtn("Hi Blush! My payment for order " + id + " didn’t go through."));
+        }
+      } catch (x) { done("We couldn’t check <em>your payment</em>", "Please refresh in a moment. If money was taken, message us with order " + id + " and we will confirm it.", '<a class="btn" href="">Refresh</a>' + waBtn("Hi Blush! Please check my order " + id + ".")); }
+    };
+    check(0);
   }
 
   /* ── Contact composer ── */
