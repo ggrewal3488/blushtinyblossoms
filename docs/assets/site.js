@@ -11,6 +11,8 @@
   const fromPrice = l => (l.priceBySize ? "From " + money(Math.min(...Object.values(l.priceBySize))) : "Price on request");
   const priceText = (l, size) => (priceOf(l, size) ? money(priceOf(l, size)) : fromPrice(l));
   const igDM = "https://ig.me/m/" + SHOP.instagram;
+  /* Meta Pixel shop events (only if the pixel loaded) */
+  const pixel = (ev, data, opts) => { try { if (window.fbq) window.fbq("track", ev, data || {}, opts || {}); } catch (e) {} };
   const shipFor = sub => (sub >= SHOP.freeAbove ? 0 : SHOP.shipFee);
   const waLink = text => "https://wa.me/" + SHOP.whatsapp + (text ? "?text=" + encodeURIComponent(text) : "");
 
@@ -110,12 +112,14 @@
       added.textContent = ""; paintPrice(); refresh();
     });
     const needSize = () => { if (l.sizes.length && !size) { added.textContent = "Please choose a size first."; sizes.querySelector("button:not(:disabled)")?.focus(); return true; } return false; };
+    pixel("ViewContent", { content_ids: [l.id], content_name: fullName(l), content_type: "product", currency: "INR", value: l.priceBySize ? Math.min(...Object.values(l.priceBySize)) : 0 });
+    const trackAdd = () => pixel("AddToCart", { content_ids: [l.id], content_name: fullName(l), content_type: "product", currency: "INR", value: priceOf(l, size) || 0, contents: [{ id: l.id, quantity: 1 }] });
     $("#look-add").addEventListener("click", () => {
       if (needSize()) return;
-      Bag.add(l.id, size);
+      Bag.add(l.id, size); trackAdd();
       added.innerHTML = "Added to your bag. <a href=\"" + ROOT + "bag\">View bag</a>";
     });
-    if (buy && SHOP.checkoutApi) buy.addEventListener("click", () => { if (needSize()) return; Bag.add(l.id, size); location.href = ROOT + "checkout"; });
+    if (buy && SHOP.checkoutApi) buy.addEventListener("click", () => { if (needSize()) return; Bag.add(l.id, size); trackAdd(); location.href = ROOT + "checkout"; });
     else if (buy && SHOP.whatsapp) buy.addEventListener("click", e => { if (needSize()) e.preventDefault(); });
     const lc = $("#look-copy"); if (lc) lc.addEventListener("click", e => copy(message(), e.currentTarget, msgEl));
     const cl = $("#copy-link");
@@ -233,6 +237,7 @@
     $("#co-ship").textContent = sub === null ? "–" : ship ? money(ship) : "Free";
     $("#co-total").textContent = sub === null ? "–" : money(sub + ship);
     if (sub !== null) pay.textContent = "Pay " + money(sub + ship) + " securely";
+    pixel("InitiateCheckout", { content_ids: items.map(i => i.id), content_type: "product", currency: "INR", value: sub === null ? 0 : sub + ship, num_items: items.reduce((n, i) => n + i.qty, 0) });
     try { const saved = JSON.parse(localStorage.getItem(KEY_C) || "{}"); Object.keys(saved).forEach(k => { if (form[k] && !form[k].value) form[k].value = saved[k]; }); } catch (e) {}
     form.addEventListener("submit", async e => {
       e.preventDefault(); err.textContent = "";
@@ -270,6 +275,9 @@
         if (r.status === 404 || r.status === 400) { done("We couldn’t find <em>that order</em>", "If you were charged, message us with your payment details and we will sort it out.", '<a class="btn" href="' + ROOT + 'collection">Back to the collection</a>' + waBtn("Hi Blush! I need help with order " + id + ".")); return; }
         if (!r.ok) throw new Error(d.error);
         if (d.paid) {
+          const items = Bag.read();
+          let seen = false; try { seen = localStorage.getItem("blush.px." + d.order_id) === "1"; localStorage.setItem("blush.px." + d.order_id, "1"); } catch (e) {}
+          if (!seen) pixel("Purchase", { value: Number(d.amount), currency: "INR", content_type: "product", content_ids: items.map(i => i.id), num_items: items.reduce((n, i) => n + i.qty, 0) }, { eventID: d.order_id });
           Bag.write([]);
           eb.textContent = "Order " + d.order_id;
           box.innerHTML = '<div class="sum-row"><span>Items</span><b>' + esc(d.items) + '</b></div><div class="sum-row total"><span>Paid</span><b>' + money(d.amount) + '</b></div>'; box.hidden = false;

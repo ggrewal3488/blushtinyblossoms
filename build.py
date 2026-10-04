@@ -21,6 +21,7 @@ SHOP = {
     # Online payment (Cashfree). Paste the checkout service address (from Cloudflare) here to switch on the
     # Checkout button and the /checkout page. Empty keeps the site in enquiry mode (WhatsApp / Instagram only).
     "checkoutApi": "https://muddy-cell-d465.ckanak.workers.dev",       # e.g. "https://blush-checkout.yourname.workers.dev"
+    "metaPixel": "1115483227495788",   # Meta (Facebook/Instagram) Pixel ID. Empty removes the pixel.
     "cashfreeMode": "sandbox",   # "sandbox" while testing, "production" when live (must match CASHFREE_ENV in Cloudflare)
     "email": "enquiry@blushtinyblossoms.co.in",   # empty hides email everywhere
     "hours": "Monday to Saturday, 10 am to 6 pm",   # customer support hours (closed Sundays)
@@ -197,6 +198,30 @@ FOOT_CATS = "".join(f'<li><a href="/collection?show={k}">{lab}</a></li>' for k, 
 NAV = [("/collection", "Collection"), ("/our-story", "Our Story"), ("/size-care", "Size Guide"), ("/faq", "FAQ"), ("/contact", "Contact")]
 
 
+def pixel():
+    """Meta Pixel base code (PageView on every page). Shop events are sent from site.js."""
+    pid = SHOP.get("metaPixel")
+    if not pid: return ""
+    return f"""
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)}};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '{pid}');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id={pid}&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->"""
+
+
 def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None, noindex=False, extra_head=""):
     url = SHOP["domain"] + ("" if path == "/" else path)
     links = "".join(f'<a href="{h}"{" aria-current=page" if h == active else ""}>{t}</a>' for h, t in NAV)
@@ -223,7 +248,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <link rel="preload" href="/fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v={VER}">
-{ld}{extra_head}
+{ld}{extra_head}{pixel()}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
