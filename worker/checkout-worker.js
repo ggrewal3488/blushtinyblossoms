@@ -10,12 +10,18 @@
  *                        → { order_id, payment_session_id, amount, mode }
  *   GET  /order-status?order_id=…  → { order_id, status, paid, amount, items, name }
  *   POST /webhook        Cashfree payment webhook (signature checked). Sends the order email if set up.
+ *   POST /signup         { name, phone, email }  welcome-offer pop-up → saved to the Google Sheet → { ok, pct, used }
+ *   POST /offer          { phone, email } → { eligible, pct }  (does this mobile / email have an unused welcome offer?)
  *
  * Settings (Cloudflare → Workers → this worker → Settings → Variables and Secrets)
  *   CASHFREE_APP_ID      App ID from Cashfree (Developers → API Keys)
  *   CASHFREE_SECRET      Secret Key from Cashfree  ← add as type "Secret"
  *   CASHFREE_ENV         "sandbox" while testing, "production" when live
  *   SITE_URL             https://blushtinyblossoms.co.in
+ *   Welcome offer (optional; without these the pop-up cannot save and no discount is given):
+ *     SHEET_API          the Google Apps Script web-app address (ends in /exec), see worker/customers-sheet.gs
+ *     SHEET_KEY          the same secret phrase you typed into that script  ← add as type "Secret"
+ *     WELCOME_PCT        discount percent, default 10 (keep it equal to welcomePct in build.py)
  *   Optional: ALLOWED_ORIGINS (extra comma-separated origins), CASHFREE_API_VERSION,
  *             RESEND_API_KEY + NOTIFY_EMAIL (+ EMAIL_FROM) to receive an email for every paid order.
  */
@@ -31,9 +37,11 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     try {
       if (url.pathname === "/create-order" && request.method === "POST") return json(await createOrder(request, env), 200, cors);
-      if (url.pathname === "/order-status" && request.method === "GET") return json(await orderStatus(url.searchParams.get("order_id"), env), 200, cors);
+      if (url.pathname === "/order-status" && request.method === "GET") return json(await orderStatus(url.searchParams.get("order_id"), env, ctx), 200, cors);
+      if (url.pathname === "/signup" && request.method === "POST") return json(await signup(request, env), 200, cors);
+      if (url.pathname === "/offer" && request.method === "POST") return json(await offerCheck(request, env), 200, cors);
       if (url.pathname === "/webhook" && request.method === "POST") return await webhook(request, env, ctx);
-      if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, mode: env.CASHFREE_ENV || "sandbox", configured: !!(env.CASHFREE_APP_ID && env.CASHFREE_SECRET) }, 200, cors);
+      if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, mode: env.CASHFREE_ENV || "sandbox", configured: !!(env.CASHFREE_APP_ID && env.CASHFREE_SECRET), offer: offerOn(env) ? pct(env) : 0 }, 200, cors);
       return json({ error: "Not found" }, 404, cors);
     } catch (e) {
       const status = e.status || 500;
@@ -53,7 +61,10 @@ async function createOrder(request, env) {
   const c = cleanCustomer(body.customer);
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
   const shipping = subtotal >= cat.shipping.free_above ? 0 : cat.shipping.fee;
-  const amount = subtotal + shipping;
+  // Welcome offer: only for a mobile / email that signed up in the pop-up and has not used it. Decided here, never in the browser.
+  const offer = await offerFor(env, c.phone, c.email);
+  const discount = offer.eligible ? Math.min(subtotal - 1, Math.round(subtotal * pct(env) / 100)) : 0;
+  const amount = subtotal - discount + shipping;
 
   const orderId = "BTB-" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + randomId(6);
   const itemsText = lines.map(l => `${l.qty}x ${l.name} ${l.size}`).join(" / ");
@@ -74,6 +85,7 @@ async function createOrder(request, env) {
       items: itemsText,
       subtotal: String(subtotal),
       delivery: String(shipping),
+      discount: discount ? String(discount) : "",
       name: c.name,
       address: [c.address1, c.address2].filter(Boolean).join(", "),
       city: c.city,
@@ -83,7 +95,8 @@ async function createOrder(request, env) {
     }),
   };
   const res = await cashfree(env, "POST", "/orders", payload);
-  return { order_id: res.order_id, payment_session_id: res.payment_session_id, amount, subtotal, shipping, mode: mode(env) };
+  if (discount) await sheet(env, "reserve", { phone: c.phone, email: c.email, order_id: orderId });   // one live discounted order per customer
+  return { order_id: res.order_id, payment_session_id: res.payment_session_id, amount, subtotal, shipping, discount, mode: mode(env) };
 }
 
 function priceItems(items, cat) {
@@ -121,11 +134,12 @@ function cleanCustomer(c) {
 }
 
 /* ── check an order ── */
-async function orderStatus(orderId, env) {
+async function orderStatus(orderId, env, ctx) {
   need(env.CASHFREE_APP_ID && env.CASHFREE_SECRET, "Checkout is not set up yet.", 503);
   if (!/^[A-Za-z0-9_-]{3,45}$/.test(orderId || "")) throw bad("Unknown order.");
   const o = await cashfree(env, "GET", "/orders/" + encodeURIComponent(orderId));
   const tags = o.order_tags || {};
+  if (o.order_status === "PAID" && Number(tags.discount) > 0 && ctx) ctx.waitUntil(redeem(o, env));
   return {
     order_id: o.order_id, status: o.order_status, paid: o.order_status === "PAID", amount: o.order_amount,
     items: tags.items || o.order_note || "", name: (o.customer_details && o.customer_details.customer_name) || tags.name || "",
@@ -142,6 +156,10 @@ async function webhook(request, env, ctx) {
   let evt; try { evt = JSON.parse(raw); } catch { return new Response("bad json", { status: 400 }); }
   const orderId = evt && evt.data && evt.data.order && evt.data.order.order_id;
   const paid = evt && evt.data && evt.data.payment && evt.data.payment.payment_status === "SUCCESS";
+  if (orderId && paid) ctx.waitUntil((async () => {
+    const o = await cashfree(env, "GET", "/orders/" + encodeURIComponent(orderId));
+    if (o.order_status === "PAID" && Number((o.order_tags || {}).discount) > 0) await redeem(o, env);
+  })().catch(e => console.error("redeem", e && e.message)));
   if (orderId && paid && env.RESEND_API_KEY && env.NOTIFY_EMAIL) ctx.waitUntil(notify(orderId, env));
   return new Response("ok");
 }
@@ -152,7 +170,7 @@ async function notify(orderId, env) {
   const t = o.order_tags || {}, cd = o.customer_details || {};
   const rows = [
     ["Order", o.order_id], ["Amount", "₹" + o.order_amount], ["Items", t.items || o.order_note],
-    ["Subtotal", "₹" + (t.subtotal || "")], ["Delivery", "₹" + (t.delivery || "0")],
+    ["Subtotal", "₹" + (t.subtotal || "")], ["Welcome offer", t.discount ? "-₹" + t.discount : ""], ["Delivery", "₹" + (t.delivery || "0")],
     ["Name", cd.customer_name || t.name], ["Phone", cd.customer_phone], ["Email", cd.customer_email || t.email || ""],
     ["Address", [t.address, t.city, t.state, t.pin].filter(Boolean).join(", ")], ["Note", t.note || ""],
   ];
@@ -162,6 +180,66 @@ async function notify(orderId, env) {
     headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ from: env.EMAIL_FROM || "Blush Orders <onboarding@resend.dev>", to: [env.NOTIFY_EMAIL], subject: `New paid order ${o.order_id} · ₹${o.order_amount}`, text }),
   });
+}
+
+/* ── welcome offer (customers live in the Google Sheet, reached through a small Apps Script web app) ── */
+const offerOn = env => !!(env.SHEET_API && env.SHEET_KEY);
+const pct = env => Math.max(0, Math.min(50, parseInt(env.WELCOME_PCT, 10) || 10));
+const normPhone = v => String(v || "").replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "");
+const normEmail = v => String(v || "").trim().toLowerCase().slice(0, 120);
+const okPhone = p => /^[6-9]\d{9}$/.test(p), okEmail = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+
+async function sheet(env, action, data) {
+  if (!offerOn(env)) return null;
+  try {
+    const r = await fetch(env.SHEET_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: env.SHEET_KEY, action, ...data }), redirect: "follow" });
+    const d = await r.json();
+    if (!d || d.ok !== true) { console.error("sheet", action, JSON.stringify(d).slice(0, 300)); return null; }
+    return d;
+  } catch (e) { console.error("sheet", action, e && e.message); return null; }
+}
+
+async function signup(request, env) {
+  need(offerOn(env), "This offer is not available right now.", 503);
+  let b; try { b = await request.json(); } catch { throw bad("Invalid request."); }
+  const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  const phone = normPhone(b.phone), email = normEmail(b.email);
+  if (name.length < 2) throw bad("Please enter your name.");
+  if (!okPhone(phone)) throw bad("Please enter a 10-digit mobile number.");
+  if (email && !okEmail(email)) throw bad("Please check your email address.");
+  const d = await sheet(env, "signup", { name, phone, email, page: String(b.page || "").slice(0, 80) });
+  need(d, "We could not save that just now. Please try again.", 502);
+  return { ok: true, pct: pct(env), used: d.status === "used" };
+}
+
+async function offerCheck(request, env) {
+  let b; try { b = await request.json(); } catch { throw bad("Invalid request."); }
+  const o = await offerFor(env, normPhone(b.phone), normEmail(b.email), true);
+  return { eligible: o.eligible, pct: o.eligible ? pct(env) : 0 };
+}
+
+/* Is there an unused welcome offer for this mobile / email? An offer with an order in progress is settled first:
+   paid → used; unpaid → that order is closed so only one discounted order can ever be paid. */
+async function offerFor(env, phone, email, peek) {
+  if (!offerOn(env) || (!okPhone(phone) && !okEmail(email))) return { eligible: false };
+  const d = await sheet(env, "check", { phone: okPhone(phone) ? phone : "", email: okEmail(email) ? email : "" });
+  if (!d || d.status === "none" || d.status === "used") return { eligible: false };
+  if (d.status === "pending" && d.order_id) {
+    let o = null;
+    try { o = await cashfree(env, "GET", "/orders/" + encodeURIComponent(d.order_id)); } catch (e) {}
+    if (o && o.order_status === "PAID") { await redeem(o, env); return { eligible: false }; }
+    if (peek) return { eligible: true };
+    if (o && o.order_status === "ACTIVE") {
+      try { await cashfree(env, "PATCH", "/orders/" + encodeURIComponent(d.order_id), { order_status: "TERMINATED" }); }
+      catch (e) { return { eligible: false }; }   // could not close the earlier order: stay safe, no second discount
+    }
+  }
+  return { eligible: true };
+}
+
+async function redeem(o, env) {
+  const cd = o.customer_details || {};
+  await sheet(env, "redeem", { phone: normPhone(cd.customer_phone), email: normEmail(cd.customer_email), order_id: o.order_id, amount: String(o.order_amount) });
 }
 
 /* ── helpers ── */

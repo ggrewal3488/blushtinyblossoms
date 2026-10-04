@@ -74,3 +74,9 @@ To start selling online:
 2. Set `SHOP["mode"] = "store"`. The bag then shows a Checkout button ahead of the enquiry buttons.
 
 Not built yet, and needed before real checkout: passing the bag contents to the payment provider, stock per size, delivery charges, order confirmation emails, (shipping, returns, privacy and terms are now covered by `/faq` and `/terms`). The bag logic is isolated in the `Bag` object in `src/site.js` so it can be swapped for a real cart.
+
+## Welcome offer (first-order discount)
+
+`welcomePct` in `build.py` switches on a first-visit pop-up (name, mobile, optional email) and a discount at checkout for the same mobile number or email, usable once. Sign-ups and their status are kept in the "Customers" tab of the BlushTinyBlossoms Google Sheet.
+
+Set up once: paste `worker/customers-sheet.gs` into the Sheet's Apps Script and deploy it as a web app (steps are at the top of that file), then add `SHEET_API` and `SHEET_KEY` to the Cloudflare worker and deploy `worker/checkout-worker.js`. Without those two settings the pop-up cannot save and no discount is given. Set `welcomePct` to `0` to remove the pop-up.

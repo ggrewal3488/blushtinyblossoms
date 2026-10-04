@@ -18,7 +18,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preload" href="fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/site.css?v=e553b6fc">
+<script>if(location.protocol==="http:"&&/blushtinyblossoms[.]co[.]in$/.test(location.hostname))location.replace("https:"+location.href.slice(5))</script>
+<link rel="stylesheet" href="assets/site.css?v=e18aeb77">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "ClothingStore", "name": "Blush Tiny Blossoms", "url": "https://blushtinyblossoms.co.in", "image": "https://blushtinyblossoms.co.in/img/blush-tropica-og.jpg", "logo": "https://blushtinyblossoms.co.in/img/logo.png", "sameAs": ["https://www.instagram.com/blushtinyblossoms/"], "address": {"@type": "PostalAddress", "addressLocality": "Shahpur Jat, New Delhi", "addressCountry": "IN"}, "description": "Festive wear for children aged 3 to 13, made in limited pieces in New Delhi."}</script>
 <!-- Meta Pixel Code -->
 <script>
@@ -194,7 +195,24 @@ src="https://www.facebook.com/tr?id=1115483227495788&ev=PageView&noscript=1"
     <div class="legal"><span>© 2026 Blush Tiny Blossoms</span><span><a href="terms">Terms</a> · <a href="faq#privacy">Privacy</a> · Made in India</span></div>
   </div>
 </footer>
-<script src="assets/data.js?v=e553b6fc"></script>
-<script src="assets/site.js?v=e553b6fc"></script>
+<dialog id="welcome" class="welcome" aria-labelledby="wl-title" data-api="https://muddy-cell-d465.ckanak.workers.dev">
+  <button class="close" type="button" id="wl-close" aria-label="Close">×</button>
+  <div class="wl-body">
+    <span style="color:var(--rose)"><svg class="blossom" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="3.4"/><circle cx="18.2" cy="10" r="3.4"/><circle cx="15.8" cy="17.2" r="3.4"/><circle cx="8.2" cy="17.2" r="3.4"/><circle cx="5.8" cy="10" r="3.4"/></svg></span>
+    <span class="eyebrow">A little welcome</span>
+    <h2 id="wl-title">10% off your <em>first order</em></h2>
+    <p id="wl-text">Leave your name and mobile number. The discount applies by itself at checkout when you use the same mobile number or email.</p>
+    <form class="form" id="wl-form" novalidate>
+      <label class="full">Name<input name="name" type="text" autocomplete="name" required></label>
+      <label class="full">Mobile number<input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile" required></label>
+      <label class="full">Email<input name="email" type="email" autocomplete="email" placeholder="Optional"></label>
+      <p class="co-err" id="wl-err" role="alert"></p>
+      <button class="btn full" type="submit" id="wl-go">Get my 10% off</button>
+    </form>
+    <p class="hint">One use per mobile number or email, on your first order. We only use your details for your order and to reach you about it.</p>
+  </div>
+</dialog>
+<script src="assets/data.js?v=e18aeb77"></script>
+<script src="assets/site.js?v=e18aeb77"></script>
 </body>
 </html>

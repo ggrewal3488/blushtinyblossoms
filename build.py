@@ -22,6 +22,9 @@ SHOP = {
     # Checkout button and the /checkout page. Empty keeps the site in enquiry mode (WhatsApp / Instagram only).
     "checkoutApi": "https://muddy-cell-d465.ckanak.workers.dev",       # e.g. "https://blush-checkout.yourname.workers.dev"
     "metaPixel": "1115483227495788",   # Meta (Facebook/Instagram) Pixel ID. Empty removes the pixel.
+    # Welcome offer: a first-visit pop-up collects name + mobile and gives this % off the first order.
+    # Needs the checkout service and its Google Sheet link (see README). 0 switches the pop-up and the discount off.
+    "welcomePct": 10,
     "cashfreeMode": "sandbox",   # "sandbox" while testing, "production" when live (must match CASHFREE_ENV in Cloudflare)
     "email": "enquiry@blushtinyblossoms.co.in",   # empty hides email everywhere
     "hours": "Monday to Saturday, 10 am to 6 pm",   # customer support hours (closed Sundays)
@@ -247,6 +250,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>if(location.protocol==="http:"&&/blushtinyblossoms[.]co[.]in$/.test(location.hostname))location.replace("https:"+location.href.slice(5))</script>
 <link rel="stylesheet" href="/assets/site.css?v={VER}">
 {ld}{extra_head}{pixel()}
 </head>
@@ -297,6 +301,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
     <div class="legal"><span>© 2026 {SHOP['name']}</span><span><a href="/terms">Terms</a> · <a href="/faq#privacy">Privacy</a> · Made in India</span></div>
   </div>
 </footer>
+{welcome_dialog()}
 <script src="/assets/data.js?v={VER}"></script>
 <script src="/assets/site.js?v={VER}"></script>
 </body>
@@ -952,6 +957,29 @@ STATES = ["Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", 
           "Uttarakhand", "West Bengal"]
 
 
+def welcome_dialog():
+    """First-visit pop-up: name + mobile for the welcome discount. Shown by site.js; saved through the checkout service."""
+    pct = SHOP.get("welcomePct") or 0
+    if not (pct and SHOP["checkoutApi"]): return ""
+    return f"""<dialog id="welcome" class="welcome" aria-labelledby="wl-title" data-api="{e(SHOP['checkoutApi'])}">
+  <button class="close" type="button" id="wl-close" aria-label="Close">×</button>
+  <div class="wl-body">
+    <span style="color:var(--rose)">{BLOSSOM}</span>
+    <span class="eyebrow">A little welcome</span>
+    <h2 id="wl-title">{pct}% off your <em>first order</em></h2>
+    <p id="wl-text">Leave your name and mobile number. The discount applies by itself at checkout when you use the same mobile number or email.</p>
+    <form class="form" id="wl-form" novalidate>
+      <label class="full">Name<input name="name" type="text" autocomplete="name" required></label>
+      <label class="full">Mobile number<input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit mobile" required></label>
+      <label class="full">Email<input name="email" type="email" autocomplete="email" placeholder="Optional"></label>
+      <p class="co-err" id="wl-err" role="alert"></p>
+      <button class="btn full" type="submit" id="wl-go">Get my {pct}% off</button>
+    </form>
+    <p class="hint">One use per mobile number or email, on your first order. We only use your details for your order and to reach you about it.</p>
+  </div>
+</dialog>"""
+
+
 def checkout_page():
     states = '<option value="">Select state</option>' + "".join(f"<option>{s}</option>" for s in STATES)
     body = f"""<section class="page-head slim">
@@ -983,6 +1011,7 @@ def checkout_page():
       <span class="eyebrow">Your order</span>
       <div id="co-items"></div>
       <div class="sum-row"><span>Subtotal</span><b id="co-sub">–</b></div>
+      <div class="sum-row offer" id="co-disc-row" hidden><span>Welcome offer ({SHOP.get("welcomePct") or 0}% off)</span><b id="co-disc">–</b></div>
       <div class="sum-row"><span>Delivery</span><b id="co-ship">–</b></div>
       <div class="sum-row total"><span>Total</span><b id="co-total">–</b></div>
       <p class="hint">Free delivery across India above {rupees(P['free_above'])}. Dispatched within {P['dispatch']}.</p>
@@ -1074,7 +1103,7 @@ def main():
     images()
     css = fonts() + "\n".join((SRC / f).read_text() for f in ("base.css", "extra.css", "pages.css"))
     js = (SRC / "site.js").read_text()
-    data = {"shop": {**{k: SHOP[k] for k in ("instagram", "whatsapp", "currency", "checkoutApi", "cashfreeMode")}, "freeAbove": P["free_above"], "shipFee": P["ship_fee"]},
+    data = {"shop": {**{k: SHOP[k] for k in ("instagram", "whatsapp", "currency", "checkoutApi", "cashfreeMode", "welcomePct")}, "freeAbove": P["free_above"], "shipFee": P["ship_fee"]},
             "looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "priceBySize", "mrpBySize", "sizes", "soldout", "pos", "gallery")} for l in LOOKS}}
     data_js = "window.BLUSH = " + json.dumps(data, ensure_ascii=False) + ";\n"
     VER = hashlib.sha1((css + js + data_js).encode()).hexdigest()[:8]

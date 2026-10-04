@@ -235,10 +235,31 @@
     $("#co-items").innerHTML = items.map(i => { const l = LOOKS[i.id]; return '<div class="co-item"><img src="' + ROOT + 'img/' + l.id + '-480.webp" alt="" style="object-position:' + l.pos + '"><div><b>' + esc(fullName(l)) + '</b><span>' + (i.size ? "Size " + esc(i.size) : "") + (i.qty > 1 ? " · × " + i.qty : "") + '</span></div><span>' + (priceOf(l, i.size) ? money(priceOf(l, i.size) * i.qty) : "–") + '</span></div>'; }).join("");
     $("#co-sub").textContent = sub === null ? "–" : money(sub);
     $("#co-ship").textContent = sub === null ? "–" : ship ? money(ship) : "Free";
-    $("#co-total").textContent = sub === null ? "–" : money(sub + ship);
-    if (sub !== null) pay.textContent = "Pay " + money(sub + ship) + " securely";
+    /* welcome offer: the checkout service says whether this mobile / email has an unused offer; it also sets the real amount */
+    let disc = 0, offerSeq = 0;
+    const paint = () => {
+      $("#co-disc-row").hidden = !disc; $("#co-disc").textContent = "– " + money(disc);
+      $("#co-total").textContent = sub === null ? "–" : money(sub - disc + ship);
+      if (sub !== null && !pay.disabled) pay.textContent = "Pay " + money(sub - disc + ship) + " securely";
+    };
+    const phoneOf = v => String(v || "").replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "");
+    const checkOffer = async () => {
+      if (!SHOP.welcomePct || sub === null) return;
+      const phone = phoneOf(form.phone.value), email = form.email.value.trim().toLowerCase(), seq = ++offerSeq;
+      if (!/^[6-9]\d{9}$/.test(phone) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { disc = 0; paint(); return; }
+      try {
+        const r = await fetch(api + "/offer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone, email }) });
+        const d = await r.json().catch(() => ({}));
+        if (seq !== offerSeq) return;
+        disc = r.ok && d.eligible ? Math.round(sub * (d.pct || 0) / 100) : 0;
+      } catch (e) { if (seq === offerSeq) disc = 0; }
+      paint();
+    };
+    let offerTimer; const offerSoon = () => { clearTimeout(offerTimer); offerTimer = setTimeout(checkOffer, 500); };
+    paint();
     pixel("InitiateCheckout", { content_ids: items.map(i => i.id), content_type: "product", currency: "INR", value: sub === null ? 0 : sub + ship, num_items: items.reduce((n, i) => n + i.qty, 0) });
     try { const saved = JSON.parse(localStorage.getItem(KEY_C) || "{}"); Object.keys(saved).forEach(k => { if (form[k] && !form[k].value) form[k].value = saved[k]; }); } catch (e) {}
+    form.phone.addEventListener("input", offerSoon); form.email.addEventListener("input", offerSoon); checkOffer();
     form.addEventListener("submit", async e => {
       e.preventDefault(); err.textContent = "";
       const c = Object.fromEntries(new FormData(form));
@@ -253,9 +274,41 @@
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.payment_session_id) throw new Error(d.error || "Could not start the payment. Please try again.");
         try { sessionStorage.setItem("blush.lastOrder", d.order_id); } catch (e) {}
+        if (typeof d.discount === "number") { disc = d.discount; $("#co-disc-row").hidden = !disc; $("#co-disc").textContent = "– " + money(disc); $("#co-total").textContent = money(d.amount); }
         if (typeof Cashfree !== "function") throw new Error("The payment window could not load. Please check your connection and try again.");
         Cashfree({ mode: d.mode === "production" ? "production" : "sandbox" }).checkout({ paymentSessionId: d.payment_session_id, redirectTarget: "_self" });
       } catch (x) { err.textContent = x.message; pay.disabled = false; pay.textContent = label; }
+    });
+  }
+
+  /* ── Welcome offer pop-up: first visit only. Details are saved through the checkout service into the Google Sheet. ── */
+  const wl = $("#welcome");
+  if (wl && wl.showModal && SHOP.welcomePct && !coRoot && !$("#order-root")) {
+    const KEY_W = "blush.welcome.v1";
+    let state = null; try { state = localStorage.getItem(KEY_W); } catch (e) { state = "off"; }
+    const remember = v => { try { localStorage.setItem(KEY_W, v); } catch (e) {} };
+    const f = $("#wl-form"), werr = $("#wl-err"), go = $("#wl-go");
+    if (!state) setTimeout(() => { if (!document.querySelector("dialog[open]")) { wl.showModal(); remember("seen"); } }, 3500);
+    $("#wl-close").addEventListener("click", () => wl.close());
+    f.addEventListener("submit", async e => {
+      e.preventDefault(); werr.textContent = "";
+      const name = f.name.value.trim(), phone = f.phone.value.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, ""), email = f.email.value.trim();
+      if (name.length < 2) { werr.textContent = "Please enter your name."; f.name.focus(); return; }
+      if (!/^[6-9]\d{9}$/.test(phone)) { werr.textContent = "Please enter a 10-digit mobile number."; f.phone.focus(); return; }
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { werr.textContent = "Please check your email address."; f.email.focus(); return; }
+      go.disabled = true; const label = go.textContent; go.textContent = "Saving…";
+      try {
+        const r = await fetch(wl.dataset.api.replace(/\/$/, "") + "/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone, email, page: location.pathname }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "We could not save that just now. Please try again.");
+        remember("joined");
+        try { const c = JSON.parse(localStorage.getItem("blush.customer.v1") || "{}"); localStorage.setItem("blush.customer.v1", JSON.stringify({ ...c, name: c.name || name, phone: c.phone || phone, email: c.email || email })); } catch (x) {}
+        pixel("Lead", { content_name: "Welcome offer" });
+        f.hidden = true;
+        $("#wl-title").innerHTML = d.used ? "Welcome <em>back</em>" : "You’re <em>in</em>";
+        $("#wl-text").textContent = d.used ? "This mobile number or email has already used its welcome offer. Thank you for shopping with us." : SHOP.welcomePct + "% comes off your first order at checkout. Use the same mobile number" + (email ? " or email" : "") + " and it applies by itself.";
+        $("#wl-text").insertAdjacentHTML("afterend", '<a class="btn" href="' + ROOT + 'collection">View the collection</a>');
+      } catch (x) { werr.textContent = x.message; go.disabled = false; go.textContent = label; }
     });
   }
 
