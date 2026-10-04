@@ -1,5 +1,71 @@
 [
  {
+  "id": "lemon-blossom-lehnga-set",
+  "name": "Lemon Blossom Lehnga Set",
+  "sil": "Strappy peplum top + tiered lehnga",
+  "pal": "Lemon / Lilac / Coral",
+  "cat": [
+   "lehenga",
+   "peplum"
+  ],
+  "contents": "Peplum top, lehnga",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 25%",
+  "new": true,
+  "fabric": "Lemon gingham cotton with tropical floral print, bead-edged hems",
+  "detail": "The garden print in soft lemon. A strappy peplum top over a three-tier lehnga, with lilac and coral blooms across the checks and a fine beaded edge on every tier.",
+  "styling": "Diwali evenings and haldi mornings."
+ },
+ {
+  "id": "botanical-garden-bow-set",
+  "name": "Botanical Garden Bow Set",
+  "sil": "Bow-front top + frill-hem pants",
+  "pal": "Ivory / Wildflower / Blush",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Top, pants",
+  "prices": [
+   3500,
+   4500,
+   5500,
+   6000,
+   7000
+  ],
+  "pos": "50% 30%",
+  "new": true,
+  "fabric": "Ivory cotton with a scattered botanical print, blush ribbon bows",
+  "detail": "An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."
+ },
+ {
+  "id": "sunny-meadow-jumpsuit",
+  "name": "Sunny Meadow Jumpsuit",
+  "sil": "Flutter-sleeve gingham jumpsuit",
+  "pal": "Sunshine / Iris / Daisy",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Jumpsuit",
+  "prices": [
+   4500,
+   5500,
+   6000,
+   6500,
+   7000
+  ],
+  "pos": "50% 30%",
+  "new": true,
+  "fabric": "Yellow gingham cotton, meadow-flower border print",
+  "detail": "A sunny yellow gingham jumpsuit with flutter sleeves and a square neck. Wide legs carry a border of irises and daisies along the hem.",
+  "styling": "Garden picnics and birthday lunches."
+ },
+ {
   "id": "lavender-meadow",
   "name": "Lavender Meadow",
   "sil": "Sleeveless gingham kurta + tiered sharara",
@@ -269,72 +335,6 @@
   "detail": "A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."
  },
  {
-  "id": "lemon-blossom-lehnga-set",
-  "name": "Lemon Blossom Lehnga Set",
-  "sil": "Strappy peplum top + tiered lehnga",
-  "pal": "Lemon / Lilac / Coral",
-  "cat": [
-   "lehenga",
-   "peplum"
-  ],
-  "contents": "Peplum top, lehnga",
-  "prices": [
-   6700,
-   7700,
-   8200,
-   8700,
-   9200
-  ],
-  "pos": "50% 25%",
-  "new": true,
-  "fabric": "Lemon gingham cotton with tropical floral print, bead-edged hems",
-  "detail": "The garden print in soft lemon. A strappy peplum top over a three-tier lehnga, with lilac and coral blooms across the checks and a fine beaded edge on every tier.",
-  "styling": "Diwali evenings and haldi mornings."
- },
- {
-  "id": "botanical-garden-bow-set",
-  "name": "Botanical Garden Bow Set",
-  "sil": "Bow-front top + frill-hem pants",
-  "pal": "Ivory / Wildflower / Blush",
-  "cat": [
-   "coord"
-  ],
-  "contents": "Top, pants",
-  "prices": [
-   3500,
-   4500,
-   5500,
-   6000,
-   7000
-  ],
-  "pos": "50% 30%",
-  "new": true,
-  "fabric": "Ivory cotton with a scattered botanical print, blush ribbon bows",
-  "detail": "An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."
- },
- {
-  "id": "sunny-meadow-jumpsuit",
-  "name": "Sunny Meadow Jumpsuit",
-  "sil": "Flutter-sleeve gingham jumpsuit",
-  "pal": "Sunshine / Iris / Daisy",
-  "cat": [
-   "coord"
-  ],
-  "contents": "Jumpsuit",
-  "prices": [
-   4500,
-   5500,
-   6000,
-   6500,
-   7000
-  ],
-  "pos": "50% 30%",
-  "new": true,
-  "fabric": "Yellow gingham cotton, meadow-flower border print",
-  "detail": "A sunny yellow gingham jumpsuit with flutter sleeves and a square neck. Wide legs carry a border of irises and daisies along the hem.",
-  "styling": "Garden picnics and birthday lunches."
- },
- {
   "id": "gardenia-bandi-set",
   "name": "Gardenia Bandi Set",
   "sil": "Kurta pyjama + botanical bandi jacket",
@@ -390,6 +390,17 @@
    6800,
    7300,
    7800
+  ],
+  "soldout": [
+   "4–5Y",
+   "5–6Y",
+   "6–7Y",
+   "7–8Y",
+   "8–9Y",
+   "9–10Y",
+   "10–11Y",
+   "11–12Y",
+   "12–13Y"
   ],
   "pos": "50% 30%",
   "new": true,
