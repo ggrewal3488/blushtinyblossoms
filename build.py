@@ -1025,9 +1025,12 @@ def order_page():
     return layout("/order", "Your order · Blush Tiny Blossoms", "Order confirmation.", body, noindex=True)
 
 
+PRICE_STEPS = [0, 1000, 1500, 2000, 2500]   # added to the first size band's price to fill the other bands on /admin
+
+
 def admin_page():
     """/admin: add and edit looks, sold out, discounts. A separate small page; sign-in is checked by the checkout service."""
-    cfg = {"api": SHOP["checkoutApi"], "site": "", "sizes": SIZES, "bands": BANDS}
+    cfg = {"api": SHOP["checkoutApi"], "site": "", "sizes": SIZES, "bands": BANDS, "steps": PRICE_STEPS}
     cats = "".join(f'<label class="tick"><input type="checkbox" name="cat" value="{k}"> {lab}</label>' for k, lab, _ in FILTERS[1:])
     sizes = "".join(f'<label class="tick"><input type="checkbox" name="so" value="{s}"> {s}</label>' for s in SIZES)
     prices = "".join(f'<label>{b}<input name="p{i}" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label>' for i, b in enumerate(BANDS))
@@ -1125,6 +1128,7 @@ dialog.ad-dlg{{width:min(720px,calc(100vw - 20px));border-radius:18px}}
       <label>Which part of the photo to keep in view<select name="pos">{pos}</select></label></div></div>
     <h3>Price by size band (₹)</h3>
     <div class="five">{prices}</div>
+    <p class="hint full" style="margin-top:-8px">Type the first price ({BANDS[0]}) and the other four fill in by themselves: +₹1,000, +₹1,500, +₹2,000 and +₹2,500. You can still change any of them for a special case.</p>
     <label>Discount %<input name="discountPct" type="number" inputmode="numeric" min="0" max="90" step="1" placeholder="e.g. 20"></label>
     <p class="hint" id="ad-sale-note" style="align-self:end"></p>
     <h3>Sold out sizes</h3>

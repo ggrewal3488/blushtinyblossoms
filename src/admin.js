@@ -114,6 +114,12 @@
     $("#ad-sale-note").textContent = p && d > 0 && d <= 90 ? "Shows as " + money(Math.round(p * (100 - d) / 100)) + " with " + money(p) + " struck through (first size band)." : "Leave empty for no discount.";
   };
   f.addEventListener("input", paintSale);
+  /* the first band's price sets the other four (first + 1000 / 1500 / 2000 / 2500); they stay editable */
+  const STEPS = CFG.steps || [0, 1000, 1500, 2000, 2500];
+  f.p0.addEventListener("input", () => {
+    const x = Math.round(Number(f.p0.value));
+    STEPS.forEach((s, k) => { if (k) f["p" + k].value = x >= 1 ? x + s : ""; });
+  });
   f.isnew.addEventListener("change", () => { if (f.isnew.checked) f.restock.checked = false; });   // one tag at a time
   f.restock.addEventListener("change", () => { if (f.restock.checked) f.isnew.checked = false; });
   $("#ad-so-all").addEventListener("click", () => $$("[name=so]", f).forEach(c => (c.checked = true)));

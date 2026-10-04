@@ -59,7 +59,7 @@ dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
 </style>
 </head>
 <body>
-<div class="ad-wrap" id="admin" data-cfg="{&quot;api&quot;: &quot;https://muddy-cell-d465.ckanak.workers.dev&quot;, &quot;site&quot;: &quot;&quot;, &quot;sizes&quot;: [&quot;3–4Y&quot;, &quot;4–5Y&quot;, &quot;5–6Y&quot;, &quot;6–7Y&quot;, &quot;7–8Y&quot;, &quot;8–9Y&quot;, &quot;9–10Y&quot;, &quot;10–11Y&quot;, &quot;11–12Y&quot;, &quot;12–13Y&quot;], &quot;bands&quot;: [&quot;3–4Y &amp; 4–5Y&quot;, &quot;5–6Y &amp; 6–7Y&quot;, &quot;7–8Y &amp; 8–9Y&quot;, &quot;9–10Y &amp; 10–11Y&quot;, &quot;11–12Y &amp; 12–13Y&quot;]}">
+<div class="ad-wrap" id="admin" data-cfg="{&quot;api&quot;: &quot;https://muddy-cell-d465.ckanak.workers.dev&quot;, &quot;site&quot;: &quot;&quot;, &quot;sizes&quot;: [&quot;3–4Y&quot;, &quot;4–5Y&quot;, &quot;5–6Y&quot;, &quot;6–7Y&quot;, &quot;7–8Y&quot;, &quot;8–9Y&quot;, &quot;9–10Y&quot;, &quot;10–11Y&quot;, &quot;11–12Y&quot;, &quot;12–13Y&quot;], &quot;bands&quot;: [&quot;3–4Y &amp; 4–5Y&quot;, &quot;5–6Y &amp; 6–7Y&quot;, &quot;7–8Y &amp; 8–9Y&quot;, &quot;9–10Y &amp; 10–11Y&quot;, &quot;11–12Y &amp; 12–13Y&quot;], &quot;steps&quot;: [0, 1000, 1500, 2000, 2500]}">
   <form class="ad-card" id="ad-login">
     <span class="eyebrow">Blush Tiny Blossoms</span>
     <h1 style="font-size:2rem">Shop admin</h1>
@@ -91,6 +91,7 @@ dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
       <label>Which part of the photo to keep in view<select name="pos"><option value="50% 15%">Top (keep the face in view)</option><option value="50% 30%">Upper</option><option value="50% 50%">Centre</option><option value="50% 70%">Lower</option></select></label></div></div>
     <h3>Price by size band (₹)</h3>
     <div class="five"><label>3–4Y & 4–5Y<input name="p0" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>5–6Y & 6–7Y<input name="p1" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>7–8Y & 8–9Y<input name="p2" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>9–10Y & 10–11Y<input name="p3" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>11–12Y & 12–13Y<input name="p4" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label></div>
+    <p class="hint full" style="margin-top:-8px">Type the first price (3–4Y & 4–5Y) and the other four fill in by themselves: +₹1,000, +₹1,500, +₹2,000 and +₹2,500. You can still change any of them for a special case.</p>
     <label>Discount %<input name="discountPct" type="number" inputmode="numeric" min="0" max="90" step="1" placeholder="e.g. 20"></label>
     <p class="hint" id="ad-sale-note" style="align-self:end"></p>
     <h3>Sold out sizes</h3>
