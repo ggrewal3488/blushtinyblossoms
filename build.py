@@ -76,7 +76,7 @@ LOOKS = [
          fabric="Lime chartreuse cotton, pink gota and yoke embroidery", detail="Unexpected and joyful. Chartreuse kurta with a dense floral yoke and contrast pink gota at the tiered sharara seams. A favourite for photos."),
     dict(id="colorblock-bagh", name="Color Block Bagh", sil="Gingham + ivory embroidered top & skirt", pal="Pink / Chikankari ivory / Garden green", cat=["coord"], contents="Top, skirt", prices=[6000, 7000, 7500, 8000, 8500],
          fabric="Pink gingham, ivory chikankari embroidery, cotton skirt", detail="Playful colorblock. Pink gingham bodice with an ivory embroidered yoke and a full gathered skirt in ivory with gingham facing. Festive but light."),
-    dict(id="colorblock-bagh-sunshine", name="Color Block Bagh", variant="Sunshine", sil="Gingham + botanical panel top & skirt", pal="Sunshine / Teal / Ivory", cat=["coord"], contents="Top, skirt", prices=None,   # not in the pricing sheet yet
+    dict(id="colorblock-bagh-sunshine", name="Color Block Bagh", variant="Sunshine", sil="Gingham + botanical panel top & skirt", pal="Sunshine / Teal / Ivory", cat=["coord"], contents="Top, skirt", prices=[6000, 7000, 7500, 8000, 8500],
          fabric="Yellow gingham and teal botanical print cotton, lace trim", detail="The same garden colorblock in sunshine yellow. Gingham and teal botanical panels on the top and gathered skirt, finished with a soft lace hem."),
     dict(id="blush-blossom-dress", name="Blush Blossom Dress", sil="Embellished bodice + tiered tulle dress", pal="Blush / Ivory / Soft gold", cat=["dress"], contents="Dress", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 40%",
          fabric="Blush tulle in gathered tiers, hand-embellished bodice", detail="A cloud of blush tulle. Flutter sleeves and a bodice scattered with hand-embellished flowers, over a full tiered skirt made for twirling.", styling="Birthdays and garden parties."),
@@ -84,9 +84,6 @@ LOOKS = [
          fabric="Ivory tulle skirt, satin bodice, hand-applied fabric flowers", detail="An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."),
     dict(id="mint-blossom-lehnga", name="Mint Blossom Lehnga", sil="Embellished choli + flared lehnga", pal="Mint / Soft gold / Rose", cat=["lehenga"], contents="Choli, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 30%",
          fabric="Mint lehnga and choli with sequin and bead handwork", detail="A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."),
-    # Payment test item (₹10 in every size). Delete this dict, and src/img-orig/test-item.jpg, once payments are confirmed working.
-    dict(id="test-item", name="Test Item", sil="For payment testing only", pal="Not a real product", cat=[], contents="Test item", prices=[10, 10, 10, 10, 10],
-         fabric="None. This is a test listing.", detail="A ₹10 listing used to check that online payment works. Please do not order this; nothing will be shipped."),
     dict(id="gardenia-bandi-set", name="Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 30%",
          fabric="Sage kurta and pyjama, rose botanical print bandi", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
 ]
