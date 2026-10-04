@@ -84,6 +84,9 @@ LOOKS = [
          fabric="Ivory tulle skirt, satin bodice, hand-applied fabric flowers", detail="An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."),
     dict(id="mint-blossom-lehnga", name="Mint Blossom Lehnga", sil="Embellished choli + flared lehnga", pal="Mint / Soft gold / Rose", cat=["lehenga"], contents="Choli, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 30%",
          fabric="Mint lehnga and choli with sequin and bead handwork", detail="A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."),
+    # Payment test item (₹10 in every size). Delete this dict, and src/img-orig/test-item.jpg, once payments are confirmed working.
+    dict(id="test-item", name="Test Item", sil="For payment testing only", pal="Not a real product", cat=[], contents="Test item", prices=[10, 10, 10, 10, 10],
+         fabric="None. This is a test listing.", detail="A ₹10 listing used to check that online payment works. Please do not order this; nothing will be shipped."),
     dict(id="gardenia-bandi-set", name="Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 30%",
          fabric="Sage kurta and pyjama, rose botanical print bandi", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
 ]

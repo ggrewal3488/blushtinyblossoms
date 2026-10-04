@@ -56,7 +56,7 @@ async function createOrder(request, env) {
   const amount = subtotal + shipping;
 
   const orderId = "BTB-" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + randomId(6);
-  const itemsText = lines.map(l => `${l.qty}x ${l.name} ${l.size}`).join("; ");
+  const itemsText = lines.map(l => `${l.qty}x ${l.name} ${l.size}`).join(" / ");
   const site = env.SITE_URL.replace(/\/$/, "");
   const payload = {
     order_id: orderId,
@@ -69,7 +69,7 @@ async function createOrder(request, env) {
       ...(c.email ? { customer_email: c.email } : {}),
     },
     order_meta: { return_url: `${site}/order?order_id={order_id}` },
-    order_note: clip(`${itemsText}${shipping ? " + delivery" : ""}`, 200),
+    order_note: clip(safeText(`${itemsText}${shipping ? " plus delivery" : ""}`), 200),
     order_tags: compactTags({
       items: itemsText,
       subtotal: String(subtotal),
@@ -79,7 +79,6 @@ async function createOrder(request, env) {
       city: c.city,
       state: c.state,
       pin: c.pin,
-      email: c.email,
       note: c.note,
     }),
   };
@@ -208,8 +207,10 @@ const mode = env => (env.CASHFREE_ENV === "production" ? "production" : "sandbox
 const json = (obj, status, headers) => new Response(JSON.stringify(obj), { status, headers: { ...headers, "Content-Type": "application/json" } });
 const bad = msg => Object.assign(new Error(msg), { status: 400 });
 const need = (ok, msg, status) => { if (!ok) throw Object.assign(new Error(msg), { status }); };
-const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s.length < 3 ? (s + "   ").slice(0, 3) : s);
-function compactTags(o) { const out = {}; for (const [k, v] of Object.entries(o)) if (v) { const t = String(v); out[k] = t.length > 255 ? t.slice(0, 254) + "…" : t; } return out; }
+const clip = (s, n) => (s.length > n ? s.slice(0, n) : s.length < 3 ? (s + "   ").slice(0, 3) : s);
+/* Cashfree rejects order_tags / order_note values with symbols, emojis, line breaks or URLs, so keep plain letters, digits and . - _ / only. */
+const safeText = v => String(v == null ? "" : v).replace(/[\u2010-\u2015]/g, "-").replace(/\u00d7/g, "x").normalize("NFKD").replace(/[^A-Za-z0-9 .\-_\/]/g, " ").replace(/\s+/g, " ").trim();
+function compactTags(o) { const out = {}; for (const [k, v] of Object.entries(o)) { const t = safeText(v).slice(0, 250); if (t) out[k] = t; } return out; }
 function randomId(n) { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(n)); return [...b].map(x => a[x % a.length]).join(""); }
 async function hmacBase64(secret, msg) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
