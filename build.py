@@ -87,11 +87,19 @@ LOOKS = [
          fabric="Ivory tulle skirt, satin bodice, hand-applied fabric flowers", detail="An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."),
     dict(id="mint-blossom-lehnga", name="Mint Blossom Lehnga", sil="Embellished choli + flared lehnga", pal="Mint / Soft gold / Rose", cat=["lehenga"], contents="Choli, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 30%",
          fabric="Mint lehnga and choli with sequin and bead handwork", detail="A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."),
+    dict(id="lemon-blossom-lehnga-set", name="Lemon Blossom Lehnga Set", sil="Strappy peplum top + tiered lehnga", pal="Lemon / Lilac / Coral", cat=["lehenga", "peplum"], contents="Peplum top, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 25%", new=True,
+         fabric="Lemon gingham cotton with tropical floral print, bead-edged hems", detail="The garden print in soft lemon. A strappy peplum top over a three-tier lehnga, with lilac and coral blooms across the checks and a fine beaded edge on every tier.", styling="Diwali evenings and haldi mornings."),
+    dict(id="botanical-garden-bow-set", name="Botanical Garden Bow Set", sil="Bow-front top + frill-hem pants", pal="Ivory / Wildflower / Blush", cat=["coord"], contents="Top, pants", prices=[4500, 5500, 6000, 6500, 7000], pos="50% 25%", new=True,
+         fabric="Ivory cotton with a scattered botanical print, blush ribbon bows", detail="An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."),
+    dict(id="sunny-meadow-jumpsuit", name="Sunny Meadow Jumpsuit", sil="Flutter-sleeve gingham jumpsuit", pal="Sunshine / Iris / Daisy", cat=["coord"], contents="Jumpsuit", prices=[4500, 5500, 6000, 6500, 7000], pos="50% 22%", new=True,
+         fabric="Yellow gingham cotton, meadow-flower border print", detail="A sunny yellow gingham jumpsuit with flutter sleeves and a square neck. Wide legs carry a border of irises and daisies along the hem.", styling="Garden picnics and birthday lunches."),
     dict(id="gardenia-bandi-set", name="Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 30%",
          fabric="Sage kurta and pyjama, rose botanical print bandi", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
+    dict(id="lemon-gardenia-bandi-set", name="Lemon Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Lemon / Ivory / Lilac", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 14%", new=True,
+         fabric="Ivory kurta and pyjama, lemon gingham bandi with botanical print", detail="For little brothers. An ivory kurta and pyjama under a lemon gingham bandi printed with lilac and coral garden flowers. Pairs with the Lemon Blossom Lehnga Set."),
 ]
 FILTERS = [("all", "All looks", None), ("sharara", "Sharara sets", "lavender-meadow"), ("peplum", "Peplum sets", "daffodil-picnic"), ("kurta", "Kurta sets", "nilgiri"),
-           ("coord", "Skirt co-ords", "colorblock-bagh"), ("dress", "Dresses", "blush-blossom-dress"), ("lehenga", "Lehngas", "mint-blossom-lehnga"), ("boys", "Boys", "gardenia-bandi-set")]
+           ("coord", "Co-ords &amp; jumpsuits", "colorblock-bagh"), ("dress", "Dresses", "blush-blossom-dress"), ("lehenga", "Lehngas", "mint-blossom-lehnga"), ("boys", "Boys", "gardenia-bandi-set")]
 FEATURED = ["lavender-meadow", "blush-blossom-dress", "haldi-orchard", "little-bloom-dress"]
 INSTA = ["blush-tropica", "lime-bahaar", "colorblock-bagh", "haldi-orchard", "daffodil-picnic", "lavender-meadow"]
 
