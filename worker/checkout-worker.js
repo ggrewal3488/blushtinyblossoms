@@ -275,9 +275,10 @@ async function couponFor(env, code, subtotal) {
   if (!d.found || !d.active || !(d.pct > 0)) return { error: "That coupon code is not valid." };
   if (d.expired) return { error: "That coupon code has expired." };
   if (d.min > 0 && subtotal < d.min) return { error: "That coupon needs an order of ₹" + d.min.toLocaleString("en-IN") + " or more." };
-  let off = Math.round(subtotal * Math.min(d.pct, 100) / 100);   // a 100% code leaves ₹1 to pay: the payment gateway cannot take a ₹0 order
+  let off = Math.round(subtotal * Math.min(d.pct, 99) / 100);    // a coupon takes at most 99% off…
   if (d.max > 0) off = Math.min(off, d.max);
-  return { code, discount: Math.max(0, Math.min(off, subtotal - 1)), pct: d.pct, max: d.max || 0 };
+  const keep = Math.max(50, Math.ceil(subtotal / 100));          // …and the customer always pays at least 1% of the order or ₹50, whichever is higher
+  return { code, discount: Math.max(0, Math.min(off, subtotal - keep)), pct: d.pct, max: d.max || 0 };
 }
 
 async function couponCheck(request, env) {
