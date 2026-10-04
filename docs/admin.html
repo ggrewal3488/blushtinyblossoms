@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin · Blush Tiny Blossoms</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="stylesheet" href="assets/site.css?v=33ad28ee">
+<style>
+body{background:var(--petal)}
+.ad-wrap{max-width:900px;margin-inline:auto;padding:22px clamp(16px,4vw,32px) 120px}
+.ad-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.ad-top h1{font-size:clamp(1.7rem,5vw,2.4rem)}
+.ad-card{background:var(--milk);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,28px)}
+#ad-login{max-width:420px;margin:8vh auto 0;display:flex;flex-direction:column;gap:14px}
+#ad-login input{font:inherit;font-size:1rem;border:1px solid var(--line);border-radius:12px;padding:.8em 1em;min-height:48px;background:var(--milk);color:var(--ink)}
+.ad-note{color:var(--ink-soft);font-size:.92rem;margin:0}
+.ad-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.ad-row:first-child{border-top:0}
+.ad-row.off{opacity:.6}
+.ad-row img,.ad-row .noimg{width:64px;height:84px;object-fit:cover;border-radius:10px;background:var(--mist)}
+.ad-row .noimg{display:grid;place-items:center;font-size:.6rem;color:var(--ink-soft);text-align:center}
+.ad-main{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ad-main b{font-weight:500}
+.ad-main span{color:var(--ink-soft);font-size:.92rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:.25em .7em;color:var(--ink-soft)}
+.chip.dark{background:var(--ink);color:var(--milk);border-color:var(--ink)}
+.chip.rose{color:var(--rose-deep);border-color:var(--rose)}
+.chip.grey{background:var(--mist)}
+.ad-acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.ad-acts .btn{padding:.55em 1.3em}
+.linkbtn{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--rose-deep);text-decoration:underline;cursor:pointer}
+#ad-bar{position:fixed;left:0;right:0;bottom:0;background:var(--milk);border-top:1px solid var(--line);padding:12px clamp(16px,4vw,32px) calc(12px + env(safe-area-inset-bottom,0px));display:none;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;z-index:5}
+#ad-bar.on{display:flex}
+#ad-bar p{margin:0;font-size:.92rem;color:var(--ink-soft)}
+dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
+.ad-form{padding:clamp(18px,4vw,30px);display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+.ad-form h2{grid-column:1/-1;font-size:1.6rem}
+.ad-form h3{grid-column:1/-1;font-family:var(--body);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--rose-deep);font-weight:400;border-top:1px solid var(--line);padding-top:16px;margin:4px 0 0}
+.ad-form .full,.ad-form .ticks,.ad-form .five{grid-column:1/-1}
+.ticks{display:flex;flex-wrap:wrap;gap:8px 16px}
+.tick{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;font-size:.92rem!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important}
+.tick input{width:20px;min-height:20px;height:20px;padding:0;accent-color:var(--rose-deep)}
+.five{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.five label{font-size:.56rem!important;letter-spacing:.08em!important}
+#ad-photo-prev{width:110px;height:146px;border-radius:12px;background:var(--mist);overflow:hidden;display:grid;place-items:center;font-size:.72rem;color:var(--ink-soft)}
+#ad-photo-prev img{width:100%;height:100%;object-fit:cover}
+.ad-photo{grid-column:1/-1;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.ad-photo>div{display:flex;flex-direction:column;gap:12px;flex:1;min-width:220px}
+.ad-btns{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media (max-width:620px){.ad-form{grid-template-columns:1fr}.five{grid-template-columns:repeat(2,minmax(0,1fr))}.ad-row{grid-template-columns:56px minmax(0,1fr)}.ad-acts{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}}
+</style>
+</head>
+<body>
+<div class="ad-wrap" id="admin" data-cfg="{&quot;api&quot;: &quot;https://muddy-cell-d465.ckanak.workers.dev&quot;, &quot;site&quot;: &quot;&quot;, &quot;sizes&quot;: [&quot;3–4Y&quot;, &quot;4–5Y&quot;, &quot;5–6Y&quot;, &quot;6–7Y&quot;, &quot;7–8Y&quot;, &quot;8–9Y&quot;, &quot;9–10Y&quot;, &quot;10–11Y&quot;, &quot;11–12Y&quot;, &quot;12–13Y&quot;], &quot;bands&quot;: [&quot;3–4Y &amp; 4–5Y&quot;, &quot;5–6Y &amp; 6–7Y&quot;, &quot;7–8Y &amp; 8–9Y&quot;, &quot;9–10Y &amp; 10–11Y&quot;, &quot;11–12Y &amp; 12–13Y&quot;]}">
+  <form class="ad-card" id="ad-login">
+    <span class="eyebrow">Blush Tiny Blossoms</span>
+    <h1 style="font-size:2rem">Shop admin</h1>
+    <label class="field-label" for="ad-pw" style="margin:0">Password</label>
+    <input id="ad-pw" type="password" autocomplete="current-password" required>
+    <p class="co-err" id="ad-login-err" role="alert"></p>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+  <div id="ad-app" hidden>
+    <div class="ad-top"><div><span class="eyebrow">Shop admin</span><h1>The <em>collection</em></h1></div>
+      <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="ad-new">Add a look</button><button class="linkbtn" type="button" id="ad-out">Sign out</button></div></div>
+    <p class="ad-note" id="ad-status" role="status"></p>
+    <div class="ad-card" style="margin-top:14px" id="ad-list"></div>
+    <p class="ad-note" style="margin-top:18px">Coupon codes are kept in the “Coupons” tab of the BlushTinyBlossoms Google Sheet. Add a row or change Active to Yes or No there; it works at checkout straight away.</p>
+  </div>
+</div>
+<div id="ad-bar"><p id="ad-bar-msg"></p><button class="btn" type="button" id="ad-publish">Publish to website</button><button class="linkbtn" type="button" id="ad-discard">Discard changes</button></div>
+<dialog class="ad-dlg" id="ad-edit" aria-labelledby="ad-edit-title">
+  <form class="form ad-form" id="ad-form" novalidate>
+    <h2 id="ad-edit-title">Edit</h2>
+    <label>Name<input name="name" type="text" maxlength="60" required></label>
+    <label>Colourway (optional)<input name="variant" type="text" maxlength="40" placeholder="e.g. Sunshine"></label>
+    <h3>Photos</h3>
+    <div class="ad-photo"><div id="ad-photo-prev"></div>
+      <div><label>Main photo<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <label>More photos for the gallery (optional)<input name="more" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+      <p class="hint" id="ad-more-note"></p>
+      <label>Which part of the photo to keep in view<select name="pos"><option value="50% 15%">Top (keep the face in view)</option><option value="50% 30%">Upper</option><option value="50% 50%">Centre</option><option value="50% 70%">Lower</option></select></label></div></div>
+    <h3>Price by size band (₹)</h3>
+    <div class="five"><label>3–4Y & 4–5Y<input name="p0" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>5–6Y & 6–7Y<input name="p1" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>7–8Y & 8–9Y<input name="p2" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>9–10Y & 10–11Y<input name="p3" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label><label>11–12Y & 12–13Y<input name="p4" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label></div>
+    <label>Discount %<input name="discountPct" type="number" inputmode="numeric" min="0" max="90" step="1" placeholder="e.g. 20"></label>
+    <p class="hint" id="ad-sale-note" style="align-self:end"></p>
+    <h3>Sold out sizes</h3>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="so" value="3–4Y"> 3–4Y</label><label class="tick"><input type="checkbox" name="so" value="4–5Y"> 4–5Y</label><label class="tick"><input type="checkbox" name="so" value="5–6Y"> 5–6Y</label><label class="tick"><input type="checkbox" name="so" value="6–7Y"> 6–7Y</label><label class="tick"><input type="checkbox" name="so" value="7–8Y"> 7–8Y</label><label class="tick"><input type="checkbox" name="so" value="8–9Y"> 8–9Y</label><label class="tick"><input type="checkbox" name="so" value="9–10Y"> 9–10Y</label><label class="tick"><input type="checkbox" name="so" value="10–11Y"> 10–11Y</label><label class="tick"><input type="checkbox" name="so" value="11–12Y"> 11–12Y</label><label class="tick"><input type="checkbox" name="so" value="12–13Y"> 12–13Y</label></div>
+    <div class="ad-btns" style="margin-top:-6px"><button class="linkbtn" type="button" id="ad-so-all">All sold out</button><button class="linkbtn" type="button" id="ad-so-none">All available</button></div>
+    <h3>Shown under</h3>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="cat" value="sharara"> Sharara sets</label><label class="tick"><input type="checkbox" name="cat" value="peplum"> Peplum sets</label><label class="tick"><input type="checkbox" name="cat" value="kurta"> Kurta sets</label><label class="tick"><input type="checkbox" name="cat" value="coord"> Co-ords &amp; jumpsuits</label><label class="tick"><input type="checkbox" name="cat" value="dress"> Dresses</label><label class="tick"><input type="checkbox" name="cat" value="lehenga"> Lehngas</label><label class="tick"><input type="checkbox" name="cat" value="boys"> Boys</label></div>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
+    <h3>Description</h3>
+    <label class="full">Short line under the name<input name="sil" type="text" maxlength="120" placeholder="e.g. Strappy peplum top + tiered lehnga"></label>
+    <label>What is in the set<input name="contents" type="text" maxlength="120" placeholder="e.g. Kurta, sharara"></label>
+    <label>Colours<input name="pal" type="text" maxlength="80" placeholder="e.g. Lemon / Lilac / Coral"></label>
+    <label class="full">Fabric<input name="fabric" type="text" maxlength="200"></label>
+    <label class="full">About this look<textarea name="detail" maxlength="700"></textarea></label>
+    <label class="full">Styling note (optional)<input name="styling" type="text" maxlength="200"></label>
+    <p class="co-err" id="ad-edit-err" role="alert"></p>
+    <div class="ad-btns"><button class="btn" type="submit">Done</button><button class="btn ghost" type="button" id="ad-cancel">Cancel</button><span style="flex:1"></span><button class="linkbtn" type="button" id="ad-del">Remove this look</button></div>
+  </form>
+</dialog>
+<script src="assets/admin.js?v=33ad28ee"></script>
+</body>
+</html>

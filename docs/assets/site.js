@@ -236,8 +236,10 @@
     $("#co-sub").textContent = sub === null ? "–" : money(sub);
     $("#co-ship").textContent = sub === null ? "–" : ship ? money(ship) : "Free";
     /* welcome offer: the checkout service says whether this mobile / email has an unused offer; it also sets the real amount */
-    let disc = 0, offerSeq = 0;
+    let disc = 0, offerSeq = 0, welcomeDisc = 0, couponDisc = 0, couponCode = "";
     const paint = () => {
+      disc = Math.max(welcomeDisc, couponDisc);
+      $("#co-disc-label").textContent = disc && couponDisc >= welcomeDisc ? "Coupon " + couponCode : "Welcome offer (" + SHOP.welcomePct + "% off)";
       $("#co-disc-row").hidden = !disc; $("#co-disc").textContent = "– " + money(disc);
       $("#co-total").textContent = sub === null ? "–" : money(sub - disc + ship);
       if (sub !== null && !pay.disabled) pay.textContent = "Pay " + money(sub - disc + ship) + " securely";
@@ -246,17 +248,33 @@
     const checkOffer = async () => {
       if (!SHOP.welcomePct || sub === null) return;
       const phone = phoneOf(form.phone.value), email = form.email.value.trim().toLowerCase(), seq = ++offerSeq;
-      if (!/^[6-9]\d{9}$/.test(phone) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { disc = 0; paint(); return; }
+      if (!/^[6-9]\d{9}$/.test(phone) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { welcomeDisc = 0; paint(); return; }
       try {
         const r = await fetch(api + "/offer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone, email }) });
         const d = await r.json().catch(() => ({}));
         if (seq !== offerSeq) return;
-        disc = r.ok && d.eligible ? Math.round(sub * (d.pct || 0) / 100) : 0;
-      } catch (e) { if (seq === offerSeq) disc = 0; }
+        welcomeDisc = r.ok && d.eligible ? Math.round(sub * (d.pct || 0) / 100) : 0;
+      } catch (e) { if (seq === offerSeq) welcomeDisc = 0; }
       paint();
     };
     let offerTimer; const offerSoon = () => { clearTimeout(offerTimer); offerTimer = setTimeout(checkOffer, 500); };
     paint();
+    /* coupon code: checked by the checkout service against the Coupons tab of the Google Sheet */
+    const cpIn = $("#co-coupon"), cpBtn = $("#co-coupon-go"), cpMsg = $("#co-coupon-msg");
+    const applyCoupon = async () => {
+      const code = cpIn.value.trim().toUpperCase(); cpMsg.textContent = ""; cpMsg.classList.remove("ok");
+      if (!code) { couponDisc = 0; couponCode = ""; paint(); return; }
+      cpBtn.disabled = true;
+      try {
+        const r = await fetch(api + "/coupon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, items: items.map(i => ({ id: i.id, size: i.size, qty: i.qty })) }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "We could not check that coupon. Please try again.");
+        couponDisc = d.discount; couponCode = d.code; cpIn.value = d.code;
+        cpMsg.textContent = couponDisc >= welcomeDisc ? "Applied: " + money(d.discount) + " off." : "Your welcome offer takes more off, so we kept that."; cpMsg.classList.add("ok");
+      } catch (x) { couponDisc = 0; couponCode = ""; cpMsg.textContent = x.message; }
+      cpBtn.disabled = false; paint();
+    };
+    if (cpBtn && sub !== null) { cpBtn.addEventListener("click", applyCoupon); cpIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } }); }
     pixel("InitiateCheckout", { content_ids: items.map(i => i.id), content_type: "product", currency: "INR", value: sub === null ? 0 : sub + ship, num_items: items.reduce((n, i) => n + i.qty, 0) });
     try { const saved = JSON.parse(localStorage.getItem(KEY_C) || "{}"); Object.keys(saved).forEach(k => { if (form[k] && !form[k].value) form[k].value = saved[k]; }); } catch (e) {}
     form.phone.addEventListener("input", offerSoon); form.email.addEventListener("input", offerSoon); checkOffer();
@@ -270,11 +288,11 @@
       try { const keep = { ...c }; delete keep.note; localStorage.setItem(KEY_C, JSON.stringify(keep)); } catch (e) {}
       pay.disabled = true; const label = pay.textContent; pay.textContent = "Opening secure payment…";
       try {
-        const r = await fetch(api + "/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map(i => ({ id: i.id, size: i.size, qty: i.qty })), customer: c }) });
+        const r = await fetch(api + "/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items.map(i => ({ id: i.id, size: i.size, qty: i.qty })), customer: c, coupon: couponCode || undefined }) });
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.payment_session_id) throw new Error(d.error || "Could not start the payment. Please try again.");
         try { sessionStorage.setItem("blush.lastOrder", d.order_id); } catch (e) {}
-        if (typeof d.discount === "number") { disc = d.discount; $("#co-disc-row").hidden = !disc; $("#co-disc").textContent = "– " + money(disc); $("#co-total").textContent = money(d.amount); }
+        if (typeof d.discount === "number") { $("#co-disc-row").hidden = !d.discount; $("#co-disc").textContent = "– " + money(d.discount); $("#co-total").textContent = money(d.amount); }
         if (typeof Cashfree !== "function") throw new Error("The payment window could not load. Please check your connection and try again.");
         Cashfree({ mode: d.mode === "production" ? "production" : "sandbox" }).checkout({ paymentSessionId: d.payment_session_id, redirectTarget: "_self" });
       } catch (x) { err.textContent = x.message; pay.disabled = false; pay.textContent = label; }

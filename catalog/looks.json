@@ -1,0 +1,369 @@
+[
+ {
+  "id": "lavender-meadow",
+  "name": "Lavender Meadow",
+  "sil": "Sleeveless gingham kurta + tiered sharara",
+  "pal": "Lavender / Ecru / Zari gold",
+  "cat": [
+   "sharara"
+  ],
+  "contents": "Kurta, sharara",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 20%",
+  "fabric": "Hand-loomed cotton gingham, gold gota edging",
+  "detail": "Soft lavender checks layered with oversized wildflower bouquets. Sleeveless A-line kurta with tiered sharara, finished with fine kinari gota.",
+  "styling": "Bare feet on grass, tiny jhumkis, braided hair."
+ },
+ {
+  "id": "blush-tropica",
+  "name": "Blush Tropica",
+  "sil": "Peplum strappy top + tiered sharara",
+  "pal": "Blush / Fern green / Cream",
+  "cat": [
+   "peplum",
+   "sharara"
+  ],
+  "contents": "Peplum top, sharara",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "fabric": "Blush pink gingham, tropical botanical print, cotton voile lining",
+  "detail": "Signature strappy peplum with gathered hem, paired with a three-tier sharara. Hand-printed monstera and hibiscus in sage and rose.",
+  "styling": "For a poolside mehendi. Add pearl flats."
+ },
+ {
+  "id": "nilgiri",
+  "name": "Nilgiri",
+  "sil": "Full-sleeve kurta pant with gota",
+  "pal": "Teal / Bubblegum / Mustard",
+  "cat": [
+   "kurta"
+  ],
+  "contents": "Kurta, pants",
+  "prices": [
+   5700,
+   6700,
+   7200,
+   7700,
+   8200
+  ],
+  "fabric": "Teal cotton, hand-block tropical florals, pink triangle gota",
+  "detail": "A quiet statement. Full sleeves, straight kurta with contrast pyjama. Inverted pink gota triangles at the hem and a tropical vine print at the border.",
+  "styling": "Brother-sister twinning ready."
+ },
+ {
+  "id": "daffodil-picnic",
+  "name": "Daffodil Picnic",
+  "sil": "Ruffle-sleeve peplum + wide palazzo",
+  "pal": "Peony / Daffodil / Leaf",
+  "cat": [
+   "peplum"
+  ],
+  "contents": "Peplum top, palazzo",
+  "prices": [
+   4500,
+   5500,
+   6000,
+   6500,
+   7000
+  ],
+  "fabric": "Pink gingham, ruffle cap sleeves, daffodil border print",
+  "detail": "Frill-sleeve peplum that flares like a tea rose. Wide palazzo with a hand-painted daffodil garden running along the hem.",
+  "styling": "Birthday garden party. Mini potli in ivory."
+ },
+ {
+  "id": "gulab-dust",
+  "name": "Gulab Dust",
+  "sil": "Embroidered kurta sharara set",
+  "pal": "Dusty rose / Ivory / Sage",
+  "cat": [
+   "sharara"
+  ],
+  "contents": "Kurta, sharara",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "fabric": "Dusty rose handloom, mirror and resham floral embroidery",
+  "detail": "Our most heirloom piece. Faded rose base with ivory and sage resham buttis, accented with tiny mirrors and French knots."
+ },
+ {
+  "id": "rosewood-zari",
+  "name": "Rosewood Zari",
+  "sil": "Long-sleeve kurta sharara with sequin neckline",
+  "pal": "Rosewood / Antique gold",
+  "cat": [
+   "sharara"
+  ],
+  "contents": "Kurta, sharara",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "fabric": "Rosewood pink cotton, gold sequin butti, zari yoke",
+  "detail": "A longer silhouette with full sleeves. Deep neckline densely embroidered in gold sequin, with zari booti scattered across the sharara."
+ },
+ {
+  "id": "haldi-orchard",
+  "name": "Haldi Orchard",
+  "sil": "Tie-up peplum + booti sharara",
+  "pal": "Mustard / Marigold / Ecru",
+  "cat": [
+   "peplum",
+   "sharara"
+  ],
+  "contents": "Peplum top, sharara",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "fabric": "Mustard yellow cotton, tie-up yoke, hand-embroidered booti",
+  "detail": "Front tie-up peplum with heavy yoke embroidery and tiny tassels. Sharara covered in all-over miniature floral buttis. Sunlit and festive.",
+  "styling": "Haldi or Basant. Keep accessories minimal."
+ },
+ {
+  "id": "lime-bahaar",
+  "name": "Lime Bahaar",
+  "sil": "Yoke-embroidered kurta sharara",
+  "pal": "Chartreuse / Gulabi / Lime leaf",
+  "cat": [
+   "sharara"
+  ],
+  "contents": "Kurta, sharara",
+  "prices": [
+   6000,
+   7000,
+   7500,
+   8000,
+   8500
+  ],
+  "fabric": "Lime chartreuse cotton, pink gota and yoke embroidery",
+  "detail": "Unexpected and joyful. Chartreuse kurta with a dense floral yoke and contrast pink gota at the tiered sharara seams. A favourite for photos."
+ },
+ {
+  "id": "colorblock-bagh",
+  "name": "Color Block Bagh",
+  "sil": "Gingham + ivory embroidered top & skirt",
+  "pal": "Pink / Chikankari ivory / Garden green",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Top, skirt",
+  "prices": [
+   6000,
+   7000,
+   7500,
+   8000,
+   8500
+  ],
+  "fabric": "Pink gingham, ivory chikankari embroidery, cotton skirt",
+  "detail": "Playful colorblock. Pink gingham bodice with an ivory embroidered yoke and a full gathered skirt in ivory with gingham facing. Festive but light."
+ },
+ {
+  "id": "colorblock-bagh-sunshine",
+  "name": "Color Block Bagh",
+  "variant": "Sunshine",
+  "sil": "Gingham + botanical panel top & skirt",
+  "pal": "Sunshine / Teal / Ivory",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Top, skirt",
+  "prices": [
+   6000,
+   7000,
+   7500,
+   8000,
+   8500
+  ],
+  "fabric": "Yellow gingham and teal botanical print cotton, lace trim",
+  "detail": "The same garden colorblock in sunshine yellow. Gingham and teal botanical panels on the top and gathered skirt, finished with a soft lace hem."
+ },
+ {
+  "id": "blush-blossom-dress",
+  "name": "Blush Blossom Dress",
+  "sil": "Embellished bodice + tiered tulle dress",
+  "pal": "Blush / Ivory / Soft gold",
+  "cat": [
+   "dress"
+  ],
+  "contents": "Dress",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 40%",
+  "fabric": "Blush tulle in gathered tiers, hand-embellished bodice",
+  "detail": "A cloud of blush tulle. Flutter sleeves and a bodice scattered with hand-embellished flowers, over a full tiered skirt made for twirling.",
+  "styling": "Birthdays and garden parties."
+ },
+ {
+  "id": "little-bloom-dress",
+  "name": "Little Bloom Dress",
+  "sil": "Strappy tulle dress with appliqué flowers",
+  "pal": "Ivory / Lilac / Lemon / Coral",
+  "cat": [
+   "dress"
+  ],
+  "contents": "Dress",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 35%",
+  "fabric": "Ivory tulle skirt, satin bodice, hand-applied fabric flowers",
+  "detail": "An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."
+ },
+ {
+  "id": "mint-blossom-lehnga",
+  "name": "Mint Blossom Lehnga",
+  "sil": "Embellished choli + flared lehnga",
+  "pal": "Mint / Soft gold / Rose",
+  "cat": [
+   "lehenga"
+  ],
+  "contents": "Choli, lehnga",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 30%",
+  "fabric": "Mint lehnga and choli with sequin and bead handwork",
+  "detail": "A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."
+ },
+ {
+  "id": "lemon-blossom-lehnga-set",
+  "name": "Lemon Blossom Lehnga Set",
+  "sil": "Strappy peplum top + tiered lehnga",
+  "pal": "Lemon / Lilac / Coral",
+  "cat": [
+   "lehenga",
+   "peplum"
+  ],
+  "contents": "Peplum top, lehnga",
+  "prices": [
+   6700,
+   7700,
+   8200,
+   8700,
+   9200
+  ],
+  "pos": "50% 25%",
+  "new": true,
+  "fabric": "Lemon gingham cotton with tropical floral print, bead-edged hems",
+  "detail": "The garden print in soft lemon. A strappy peplum top over a three-tier lehnga, with lilac and coral blooms across the checks and a fine beaded edge on every tier.",
+  "styling": "Diwali evenings and haldi mornings."
+ },
+ {
+  "id": "botanical-garden-bow-set",
+  "name": "Botanical Garden Bow Set",
+  "sil": "Bow-front top + frill-hem pants",
+  "pal": "Ivory / Wildflower / Blush",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Top, pants",
+  "prices": [
+   4500,
+   5500,
+   6000,
+   6500,
+   7000
+  ],
+  "pos": "50% 25%",
+  "new": true,
+  "fabric": "Ivory cotton with a scattered botanical print, blush ribbon bows",
+  "detail": "An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."
+ },
+ {
+  "id": "sunny-meadow-jumpsuit",
+  "name": "Sunny Meadow Jumpsuit",
+  "sil": "Flutter-sleeve gingham jumpsuit",
+  "pal": "Sunshine / Iris / Daisy",
+  "cat": [
+   "coord"
+  ],
+  "contents": "Jumpsuit",
+  "prices": [
+   4500,
+   5500,
+   6000,
+   6500,
+   7000
+  ],
+  "pos": "50% 22%",
+  "new": true,
+  "fabric": "Yellow gingham cotton, meadow-flower border print",
+  "detail": "A sunny yellow gingham jumpsuit with flutter sleeves and a square neck. Wide legs carry a border of irises and daisies along the hem.",
+  "styling": "Garden picnics and birthday lunches."
+ },
+ {
+  "id": "gardenia-bandi-set",
+  "name": "Gardenia Bandi Set",
+  "sil": "Kurta pyjama + botanical bandi jacket",
+  "pal": "Sage / Rose / Fern",
+  "cat": [
+   "boys"
+  ],
+  "contents": "Kurta, pyjama, bandi jacket",
+  "prices": [
+   5300,
+   6300,
+   6800,
+   7300,
+   7800
+  ],
+  "pos": "50% 30%",
+  "fabric": "Sage kurta and pyjama, rose botanical print bandi",
+  "detail": "For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."
+ },
+ {
+  "id": "lemon-gardenia-bandi-set",
+  "name": "Lemon Gardenia Bandi Set",
+  "sil": "Kurta pyjama + botanical bandi jacket",
+  "pal": "Lemon / Ivory / Lilac",
+  "cat": [
+   "boys"
+  ],
+  "contents": "Kurta, pyjama, bandi jacket",
+  "prices": [
+   5300,
+   6300,
+   6800,
+   7300,
+   7800
+  ],
+  "pos": "50% 14%",
+  "new": true,
+  "fabric": "Ivory kurta and pyjama, lemon gingham bandi with botanical print",
+  "detail": "For little brothers. An ivory kurta and pyjama under a lemon gingham bandi printed with lilac and coral garden flowers. Pairs with the Lemon Blossom Lehnga Set."
+ }
+]

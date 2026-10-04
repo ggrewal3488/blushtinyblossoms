@@ -602,3 +602,15 @@ dialog.welcome .close{position:absolute;top:12px;right:12px;float:none;margin:0}
 .sum-row.offer b{color:var(--rose-deep)}
 /* phone: open the home page with the photographs, then the headline */
 @media (max-width:820px){.hero-art{order:-1}.hero{padding-top:18px}}
+
+/* coupon box at checkout, sold-out tag */
+.coupon{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.coupon label{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+.coupon>div{display:flex;gap:8px}
+.coupon input{flex:1;min-width:0;font:inherit;font-size:1rem;text-transform:uppercase;color:var(--ink);background:var(--milk);border:1px solid var(--line);border-radius:12px;padding:.6em .9em;min-height:44px}
+.coupon input:focus{outline:2px solid var(--rose-deep);outline-offset:1px;border-color:transparent}
+.coupon .btn{padding:.6em 1.2em;min-height:44px}
+.co-coupon-msg{margin:0;font-size:.86rem;color:#B3261E;min-height:1.1em}
+.co-coupon-msg.ok{color:var(--rose-deep)}
+.card .tag.out{background:var(--ink);color:var(--milk)}
+#look-add[disabled]{cursor:not-allowed}

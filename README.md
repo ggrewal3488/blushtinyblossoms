@@ -80,3 +80,15 @@ Not built yet, and needed before real checkout: passing the bag contents to the 
 `welcomePct` in `build.py` switches on a first-visit pop-up (name, mobile, optional email) and a discount at checkout for the same mobile number or email, usable once. Sign-ups and their status are kept in the "Customers" tab of the BlushTinyBlossoms Google Sheet.
 
 Set up once: paste `worker/customers-sheet.gs` into the Sheet's Apps Script and deploy it as a web app (steps are at the top of that file), then add `SHEET_API` and `SHEET_KEY` to the Cloudflare worker and deploy `worker/checkout-worker.js`. Without those two settings the pop-up cannot save and no discount is given. Set `welcomePct` to `0` to remove the pop-up.
+
+## Shop admin (/admin), coupons and automatic rebuilds
+
+The looks now live in `catalog/looks.json`. The page at `/admin` edits that file from a phone or laptop: add a look (photo, prices, description), mark sizes or a whole look sold out and back, set a discount % (the original price shows struck through), hide or remove a look. "Publish to website" saves to GitHub; the GitHub Action in `.github/workflows/build.yml` then runs `build.py` and commits the new `docs/`, which GitHub Pages serves. Allow a few minutes.
+
+Set up once in the Cloudflare worker (Settings → Variables and Secrets), then deploy `worker/checkout-worker.js`:
+- `ADMIN_PASSWORD` (Secret): the password for `/admin`, 12 or more characters.
+- `GITHUB_TOKEN` (Secret): a fine-grained GitHub token limited to this repository, with Contents: Read and write, and Actions: Read.
+
+Coupon codes are rows in the "Coupons" tab of the BlushTinyBlossoms Google Sheet (Code, % off, Max discount, Active, Min order, Valid till); the tab is created by `worker/customers-sheet.gs`. A coupon and the welcome offer do not add up: the customer gets whichever takes more off.
+
+Because the Action commits to `main`, run `git pull origin main` before pushing from a computer.

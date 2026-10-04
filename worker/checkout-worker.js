@@ -12,6 +12,11 @@
  *   POST /webhook        Cashfree payment webhook (signature checked). Sends the order email if set up.
  *   POST /signup         { name, phone, email }  welcome-offer pop-up → saved to the Google Sheet → { ok, pct, used }
  *   POST /offer          { phone, email } → { eligible, pct }  (does this mobile / email have an unused welcome offer?)
+ *   POST /coupon         { code, items } → { ok, code, discount }  (coupons live in the "Coupons" tab of the Google Sheet)
+ *   Admin page (/admin on the website), all need the admin password:
+ *     GET  /admin/looks    the collection as it is in GitHub
+ *     POST /admin/publish  { looks, images } → saves catalog/looks.json and new photos to GitHub; GitHub then rebuilds the site
+ *     GET  /admin/status   is the rebuild finished?
  *
  * Settings (Cloudflare → Workers → this worker → Settings → Variables and Secrets)
  *   CASHFREE_APP_ID      App ID from Cashfree (Developers → API Keys)
@@ -22,6 +27,10 @@
  *     SHEET_API          the Google Apps Script web-app address (ends in /exec), see worker/customers-sheet.gs
  *     SHEET_KEY          the same secret phrase you typed into that script  ← add as type "Secret"
  *     WELCOME_PCT        discount percent, default 10 (keep it equal to welcomePct in build.py)
+ *   Admin page (optional; without these /admin cannot sign in):
+ *     ADMIN_PASSWORD     the password you type on /admin, 12+ characters  ← add as type "Secret"
+ *     GITHUB_TOKEN       a fine-grained GitHub token for the site repo with "Contents: Read and write" and "Actions: Read"  ← Secret
+ *     GITHUB_REPO        owner/name of the site repo, default ggrewal3488/blushtinyblossoms
  *   Optional: ALLOWED_ORIGINS (extra comma-separated origins), CASHFREE_API_VERSION,
  *             RESEND_API_KEY + NOTIFY_EMAIL (+ EMAIL_FROM) to receive an email for every paid order.
  */
@@ -40,6 +49,13 @@ export default {
       if (url.pathname === "/order-status" && request.method === "GET") return json(await orderStatus(url.searchParams.get("order_id"), env, ctx), 200, cors);
       if (url.pathname === "/signup" && request.method === "POST") return json(await signup(request, env), 200, cors);
       if (url.pathname === "/offer" && request.method === "POST") return json(await offerCheck(request, env), 200, cors);
+      if (url.pathname === "/coupon" && request.method === "POST") return json(await couponCheck(request, env), 200, cors);
+      if (url.pathname.startsWith("/admin/")) {
+        adminAuth(request, env);
+        if (url.pathname === "/admin/looks" && request.method === "GET") return json(await adminLooks(env), 200, cors);
+        if (url.pathname === "/admin/publish" && request.method === "POST") return json(await adminPublish(request, env), 200, cors);
+        if (url.pathname === "/admin/status" && request.method === "GET") return json(await adminStatus(env), 200, cors);
+      }
       if (url.pathname === "/webhook" && request.method === "POST") return await webhook(request, env, ctx);
       if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, mode: env.CASHFREE_ENV || "sandbox", configured: !!(env.CASHFREE_APP_ID && env.CASHFREE_SECRET), offer: offerOn(env) ? pct(env) : 0 }, 200, cors);
       return json({ error: "Not found" }, 404, cors);
@@ -62,8 +78,17 @@ async function createOrder(request, env) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
   const shipping = subtotal >= cat.shipping.free_above ? 0 : cat.shipping.fee;
   // Welcome offer: only for a mobile / email that signed up in the pop-up and has not used it. Decided here, never in the browser.
-  const offer = await offerFor(env, c.phone, c.email);
-  const discount = offer.eligible ? Math.min(subtotal - 1, Math.round(subtotal * pct(env) / 100)) : 0;
+  // A coupon code and the welcome offer do not add up: the customer gets whichever takes more off.
+  let couponOff = 0, couponCode = "";
+  if (body.coupon) {
+    const cp = await couponFor(env, body.coupon, subtotal);
+    if (cp.error) throw bad(cp.error);
+    couponOff = cp.discount; couponCode = cp.code;
+  }
+  const welcomeOff = Math.min(subtotal - 1, Math.round(subtotal * pct(env) / 100));
+  const useWelcome = welcomeOff > couponOff && (await offerFor(env, c.phone, c.email)).eligible;
+  const discount = useWelcome ? welcomeOff : couponOff;
+  const offerTag = !discount ? "" : useWelcome ? "WELCOME" : couponCode;
   const amount = subtotal - discount + shipping;
 
   const orderId = "BTB-" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + randomId(6);
@@ -86,6 +111,7 @@ async function createOrder(request, env) {
       subtotal: String(subtotal),
       delivery: String(shipping),
       discount: discount ? String(discount) : "",
+      offer: offerTag,
       name: c.name,
       address: [c.address1, c.address2].filter(Boolean).join(", "),
       city: c.city,
@@ -95,8 +121,8 @@ async function createOrder(request, env) {
     }),
   };
   const res = await cashfree(env, "POST", "/orders", payload);
-  if (discount) await sheet(env, "reserve", { phone: c.phone, email: c.email, order_id: orderId });   // one live discounted order per customer
-  return { order_id: res.order_id, payment_session_id: res.payment_session_id, amount, subtotal, shipping, discount, mode: mode(env) };
+  if (useWelcome) await sheet(env, "reserve", { phone: c.phone, email: c.email, order_id: orderId });   // one live discounted order per customer
+  return { order_id: res.order_id, payment_session_id: res.payment_session_id, amount, subtotal, shipping, discount, offer: offerTag, mode: mode(env) };
 }
 
 function priceItems(items, cat) {
@@ -139,7 +165,7 @@ async function orderStatus(orderId, env, ctx) {
   if (!/^[A-Za-z0-9_-]{3,45}$/.test(orderId || "")) throw bad("Unknown order.");
   const o = await cashfree(env, "GET", "/orders/" + encodeURIComponent(orderId));
   const tags = o.order_tags || {};
-  if (o.order_status === "PAID" && Number(tags.discount) > 0 && ctx) ctx.waitUntil(redeem(o, env));
+  if (o.order_status === "PAID" && usedWelcome(tags) && ctx) ctx.waitUntil(redeem(o, env));
   return {
     order_id: o.order_id, status: o.order_status, paid: o.order_status === "PAID", amount: o.order_amount,
     items: tags.items || o.order_note || "", name: (o.customer_details && o.customer_details.customer_name) || tags.name || "",
@@ -158,7 +184,7 @@ async function webhook(request, env, ctx) {
   const paid = evt && evt.data && evt.data.payment && evt.data.payment.payment_status === "SUCCESS";
   if (orderId && paid) ctx.waitUntil((async () => {
     const o = await cashfree(env, "GET", "/orders/" + encodeURIComponent(orderId));
-    if (o.order_status === "PAID" && Number((o.order_tags || {}).discount) > 0) await redeem(o, env);
+    if (o.order_status === "PAID" && usedWelcome(o.order_tags || {})) await redeem(o, env);
   })().catch(e => console.error("redeem", e && e.message)));
   if (orderId && paid && env.RESEND_API_KEY && env.NOTIFY_EMAIL) ctx.waitUntil(notify(orderId, env));
   return new Response("ok");
@@ -170,7 +196,7 @@ async function notify(orderId, env) {
   const t = o.order_tags || {}, cd = o.customer_details || {};
   const rows = [
     ["Order", o.order_id], ["Amount", "₹" + o.order_amount], ["Items", t.items || o.order_note],
-    ["Subtotal", "₹" + (t.subtotal || "")], ["Welcome offer", t.discount ? "-₹" + t.discount : ""], ["Delivery", "₹" + (t.delivery || "0")],
+    ["Subtotal", "₹" + (t.subtotal || "")], [t.offer && t.offer !== "WELCOME" ? "Coupon " + t.offer : "Welcome offer", t.discount ? "-₹" + t.discount : ""], ["Delivery", "₹" + (t.delivery || "0")],
     ["Name", cd.customer_name || t.name], ["Phone", cd.customer_phone], ["Email", cd.customer_email || t.email || ""],
     ["Address", [t.address, t.city, t.state, t.pin].filter(Boolean).join(", ")], ["Note", t.note || ""],
   ];
@@ -237,6 +263,130 @@ async function offerFor(env, phone, email, peek) {
   return { eligible: true };
 }
 
+const usedWelcome = tags => Number(tags.discount) > 0 && (!tags.offer || tags.offer === "WELCOME");
+
+/* ── coupon codes (the "Coupons" tab of the Google Sheet: Code, % off, Max discount, Active, Min order, Valid till) ── */
+async function couponFor(env, code, subtotal) {
+  code = String(code || "").trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{2,24}$/.test(code)) return { error: "That coupon code is not valid." };
+  if (!offerOn(env)) return { error: "Coupons are not available right now." };
+  const d = await sheet(env, "coupon", { code });
+  if (!d) return { error: "We could not check that coupon just now. Please try again." };
+  if (!d.found || !d.active || !(d.pct > 0)) return { error: "That coupon code is not valid." };
+  if (d.expired) return { error: "That coupon code has expired." };
+  if (d.min > 0 && subtotal < d.min) return { error: "That coupon needs an order of ₹" + d.min.toLocaleString("en-IN") + " or more." };
+  let off = Math.round(subtotal * Math.min(d.pct, 90) / 100);
+  if (d.max > 0) off = Math.min(off, d.max);
+  return { code, discount: Math.max(0, Math.min(off, subtotal - 1)), pct: d.pct, max: d.max || 0 };
+}
+
+async function couponCheck(request, env) {
+  let b; try { b = await request.json(); } catch { throw bad("Invalid request."); }
+  const lines = priceItems(b.items, await catalog(env));
+  const cp = await couponFor(env, b.code, lines.reduce((n, l) => n + l.price * l.qty, 0));
+  if (cp.error) throw bad(cp.error);
+  return { ok: true, ...cp };
+}
+
+/* ── admin page: edit the collection. Changes are committed to GitHub; a GitHub Action rebuilds and publishes the site. ── */
+const SIZES = ["3–4Y", "4–5Y", "5–6Y", "6–7Y", "7–8Y", "8–9Y", "9–10Y", "10–11Y", "11–12Y", "12–13Y"];
+const CATS = ["sharara", "peplum", "kurta", "coord", "dress", "lehenga", "boys"];
+const repo = env => env.GITHUB_REPO || "ggrewal3488/blushtinyblossoms";
+
+function adminAuth(request, env) {
+  need(env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length >= 12 && env.GITHUB_TOKEN, "The admin page is not set up yet.", 503);
+  const h = request.headers.get("Authorization") || "", given = h.startsWith("Bearer ") ? h.slice(7) : "";
+  if (!given || !timingSafeEqual(given, env.ADMIN_PASSWORD)) throw Object.assign(new Error("Wrong password."), { status: 401 });
+}
+
+async function gh(env, method, path, body) {
+  const r = await fetch("https://api.github.com/repos/" + repo(env) + path, {
+    method, body: body ? JSON.stringify(body) : undefined,
+    headers: { Authorization: "Bearer " + env.GITHUB_TOKEN, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "blush-admin", "Content-Type": "application/json" },
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    console.error("github", method, path, r.status, JSON.stringify(d).slice(0, 300));
+    throw Object.assign(new Error(r.status === 401 || r.status === 403 ? "GitHub refused the saved token. Check GITHUB_TOKEN in Cloudflare." : "GitHub could not save that (" + r.status + "). Please try again."), { status: 502 });
+  }
+  return d;
+}
+const b64ToText = b => new TextDecoder().decode(Uint8Array.from(atob(String(b).replace(/\s/g, "")), c => c.charCodeAt(0)));
+
+async function adminLooks(env) {
+  const head = (await gh(env, "GET", "/git/ref/heads/main")).object.sha;
+  const [file, dir] = await Promise.all([gh(env, "GET", "/contents/catalog/looks.json?ref=" + head), gh(env, "GET", "/contents/src/img-orig?ref=" + head)]);
+  return { rev: file.sha, looks: JSON.parse(b64ToText(file.content)), photos: dir.map(f => f.name.replace(/\.[a-z]+$/i, "")), sizes: SIZES, cats: CATS };
+}
+
+function cleanLooks(list) {
+  if (!Array.isArray(list) || !list.length || list.length > 300) throw bad("The list of looks is missing.");
+  const txt = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  const seen = new Set();
+  return list.map(l => {
+    const id = String(l && l.id || "");
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) || id.length > 60 || seen.has(id)) throw bad("A look has a missing or repeated web name: " + id);
+    seen.add(id);
+    const name = txt(l.name, 60); if (name.length < 2) throw bad("Every look needs a name.");
+    const out = { id, name };
+    if (txt(l.variant, 40)) out.variant = txt(l.variant, 40);
+    out.sil = txt(l.sil, 120); out.pal = txt(l.pal, 80);
+    out.cat = (Array.isArray(l.cat) ? l.cat : []).filter(c => CATS.includes(c));
+    out.contents = txt(l.contents, 120);
+    if (l.prices != null) {
+      const p = (Array.isArray(l.prices) ? l.prices : []).map(n => Math.round(Number(n)));
+      if (p.length !== 5 || p.some(n => !(n >= 1 && n <= 500000))) throw bad(name + ": enter all five prices, or leave all five empty.");
+      out.prices = p;
+    }
+    const d = Math.round(Number(l.discountPct) || 0);
+    if (d < 0 || d > 90) throw bad(name + ": the discount must be between 0 and 90%.");
+    if (d && out.prices) out.discountPct = d;
+    const so = (Array.isArray(l.soldout) ? l.soldout : []).filter(s => SIZES.includes(s));
+    if (so.length) out.soldout = SIZES.filter(s => so.includes(s));
+    out.pos = /^\d{1,3}% \d{1,3}%$/.test(l.pos || "") ? l.pos : "50% 30%";
+    if (l.new) out.new = true;
+    if (l.hidden) out.hidden = true;
+    out.fabric = txt(l.fabric, 200); out.detail = txt(l.detail, 700);
+    if (txt(l.styling, 200)) out.styling = txt(l.styling, 200);
+    return out;
+  });
+}
+
+async function adminPublish(request, env) {
+  let b; try { b = await request.json(); } catch { throw bad("Invalid request."); }
+  const looks = cleanLooks(b.looks), ids = new Set(looks.map(l => l.id));
+  const images = Array.isArray(b.images) ? b.images : [];
+  if (images.length > 12) throw bad("Please publish at most 12 new photos at a time.");
+  for (const im of images) {
+    const m = /^(.+?)(?:-(\d{1,2}))?$/.exec(String(im.name || ""));
+    if (!m || !(ids.has(im.name) || ids.has(m[1])) || typeof im.data !== "string" || im.data.length < 1000 || im.data.length > 6000000 || !/^[A-Za-z0-9+/=]+$/.test(im.data)) throw bad("One of the photos could not be read. Please choose it again.");
+  }
+  const head = (await gh(env, "GET", "/git/ref/heads/main")).object.sha;
+  // rev = the version of catalog/looks.json this page loaded. If the file changed since (another device, a push from the Mac), do not overwrite it.
+  const nowRev = (await gh(env, "GET", "/contents/catalog/looks.json?ref=" + head)).sha;
+  if (b.rev && b.rev !== nowRev) throw Object.assign(new Error("The collection was changed somewhere else since you opened this page. Reload the page and make the change again."), { status: 409 });
+  const have = new Set((await gh(env, "GET", "/contents/src/img-orig?ref=" + head)).map(f => f.name.replace(/\.[a-z]+$/i, "")));
+  images.forEach(im => have.add(im.name));
+  const noPhoto = looks.find(l => !have.has(l.id));
+  if (noPhoto) throw bad(noPhoto.name + " needs a photo.");
+  const looksBlob = (await gh(env, "POST", "/git/blobs", { content: JSON.stringify(looks, null, 1) + "\n", encoding: "utf-8" })).sha;
+  const tree = [{ path: "catalog/looks.json", mode: "100644", type: "blob", sha: looksBlob }];
+  for (const im of images) tree.push({ path: "src/img-orig/" + im.name + ".jpg", mode: "100644", type: "blob", sha: (await gh(env, "POST", "/git/blobs", { content: im.data, encoding: "base64" })).sha });
+  const base = (await gh(env, "GET", "/git/commits/" + head)).tree.sha;
+  const newTree = await gh(env, "POST", "/git/trees", { base_tree: base, tree });
+  const msg = String(b.message || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 120) || "Update the collection";
+  const commit = await gh(env, "POST", "/git/commits", { message: "Admin: " + msg, tree: newTree.sha, parents: [head] });
+  await gh(env, "PATCH", "/git/refs/heads/main", { sha: commit.sha });
+  catalogAt = 0;
+  return { ok: true, rev: looksBlob, commit: commit.sha };
+}
+
+async function adminStatus(env) {
+  const d = await gh(env, "GET", "/actions/workflows/build.yml/runs?per_page=1&branch=main");
+  const r = (d.workflow_runs || [])[0];
+  return r ? { status: r.status, conclusion: r.conclusion, started: r.created_at, commit: r.head_sha, url: r.html_url } : { status: "none" };
+}
+
 async function redeem(o, env) {
   const cd = o.customer_details || {};
   await sheet(env, "redeem", { phone: normPhone(cd.customer_phone), email: normEmail(cd.customer_email), order_id: o.order_id, amount: String(o.order_amount) });
@@ -276,7 +426,7 @@ function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
   const allowed = [env.SITE_URL, "https://www.blushtinyblossoms.co.in", ...(env.ALLOWED_ORIGINS || "").split(",")]
     .map(s => (s || "").trim().replace(/\/$/, "")).filter(Boolean);
-  const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", Vary: "Origin" };
+  const h = { "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", Vary: "Origin" };
   if (allowed.includes(origin)) h["Access-Control-Allow-Origin"] = origin;
   return h;
 }

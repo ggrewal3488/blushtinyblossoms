@@ -12,6 +12,13 @@
  *      then Deploy the worker.
  *   After any later edit to this script: Deploy → Manage deployments → Edit → Version: New version → Deploy.
  *
+ * COUPONS: the script also adds a "Coupons" tab. One row per code:
+ *   Code | % off | Max discount (₹) | Active | Min order (₹) | Valid till | Notes
+ *   e.g.  FESTIVE25 | 25 | 1000 | Yes   → 25% off, never more than ₹1,000 off. A ₹5,000 bag becomes ₹4,000.
+ *   Active: Yes switches a code on, No (or empty) switches it off. Max discount, Min order and Valid till are optional.
+ *   Edit that tab whenever you like; changes work at checkout straight away, no deploy needed.
+ *   To create the tab now, choose the function "setup" in the toolbar and press Run.
+ *
  * The script adds a "Customers" tab with one row per person:
  *   Signed up | Name | Mobile | Email | Status | Order ID | Paid amount | Updated | Page
  * Status is "Signed up", "Order started" or "Used". A row marked "Used" never gets the discount again.
@@ -34,7 +41,34 @@ function doPost(e) {
 
 function doGet() { return reply({ ok: true, service: "blush customers" }); }
 
+function setup() { tab(); coupons(); }
+
+function coupons() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("Coupons");
+  if (!sh) {
+    sh = ss.insertSheet("Coupons");
+    sh.getRange(1, 1, 2, 7).setValues([["Code", "% off", "Max discount (₹)", "Active", "Min order (₹)", "Valid till", "Notes"],
+      ["FESTIVE25", 25, 1000, "No", "", "", "Example: 25% off, capped at ₹1,000. Change Active to Yes to switch it on."]]);
+    sh.getRange(1, 1, 1, 7).setFontWeight("bold");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function coupon(b) {
+  const code = String(b.code || "").trim().toUpperCase(), sh = coupons();
+  const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues() : [];
+  const r = rows.filter(function (x) { return String(x[0]).trim().toUpperCase() === code; })[0];
+  if (!code || !r) return { ok: true, found: false };
+  const num = function (v) { const n = Number(String(v).replace(/[^0-9.]/g, "")); return isFinite(n) ? n : 0; };
+  let expired = false;
+  if (r[5]) { const d = r[5] instanceof Date ? r[5] : new Date(r[5]); if (!isNaN(d)) { d.setHours(23, 59, 59); expired = d < new Date(); } }
+  return { ok: true, found: true, active: /^(yes|y|active|true|1|on)$/i.test(String(r[3]).trim()), pct: num(r[1]), max: num(r[2]), min: num(r[4]), expired: expired };
+}
+
 function handle(b) {
+  if (b.action === "coupon") return coupon(b);
   const sh = tab(), now = new Date();
   const phone = String(b.phone || "").replace(/\D/g, "").slice(-10), email = String(b.email || "").trim().toLowerCase();
   const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, HEAD.length).getValues() : [];

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Blush Tiny Blossoms — static site builder.  Run:  python3 build.py   →  writes ./docs
 
-Everything a non-developer needs to change lives in the SETTINGS and LOOKS blocks below.
+Settings live in the SETTINGS block below; the looks live in catalog/looks.json (also editable from /admin).
 """
 import hashlib, html, json, re, shutil
 from urllib.parse import quote
@@ -60,44 +60,11 @@ BANDS = ["3–4Y & 4–5Y", "5–6Y & 6–7Y", "7–8Y & 8–9Y", "9–10Y & 10�
 #   contents  the pieces in the set, comma separated ("Kurta, sharara"); the look page shows the piece count.
 #   soldout   optional list of sizes that are sold out, e.g. ["3–4Y", "12–13Y"].
 #   new       optional, True shows a "New" tag on the card.
-LOOKS = [
-    dict(id="lavender-meadow", name="Lavender Meadow", sil="Sleeveless gingham kurta + tiered sharara", pal="Lavender / Ecru / Zari gold", cat=["sharara"], contents="Kurta, sharara", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 20%",
-         fabric="Hand-loomed cotton gingham, gold gota edging", detail="Soft lavender checks layered with oversized wildflower bouquets. Sleeveless A-line kurta with tiered sharara, finished with fine kinari gota.", styling="Bare feet on grass, tiny jhumkis, braided hair."),
-    dict(id="blush-tropica", name="Blush Tropica", sil="Peplum strappy top + tiered sharara", pal="Blush / Fern green / Cream", cat=["peplum", "sharara"], contents="Peplum top, sharara", prices=[6700, 7700, 8200, 8700, 9200],
-         fabric="Blush pink gingham, tropical botanical print, cotton voile lining", detail="Signature strappy peplum with gathered hem, paired with a three-tier sharara. Hand-printed monstera and hibiscus in sage and rose.", styling="For a poolside mehendi. Add pearl flats."),
-    dict(id="nilgiri", name="Nilgiri", sil="Full-sleeve kurta pant with gota", pal="Teal / Bubblegum / Mustard", cat=["kurta"], contents="Kurta, pants", prices=[5700, 6700, 7200, 7700, 8200],
-         fabric="Teal cotton, hand-block tropical florals, pink triangle gota", detail="A quiet statement. Full sleeves, straight kurta with contrast pyjama. Inverted pink gota triangles at the hem and a tropical vine print at the border.", styling="Brother-sister twinning ready."),
-    dict(id="daffodil-picnic", name="Daffodil Picnic", sil="Ruffle-sleeve peplum + wide palazzo", pal="Peony / Daffodil / Leaf", cat=["peplum"], contents="Peplum top, palazzo", prices=[4500, 5500, 6000, 6500, 7000],
-         fabric="Pink gingham, ruffle cap sleeves, daffodil border print", detail="Frill-sleeve peplum that flares like a tea rose. Wide palazzo with a hand-painted daffodil garden running along the hem.", styling="Birthday garden party. Mini potli in ivory."),
-    dict(id="gulab-dust", name="Gulab Dust", sil="Embroidered kurta sharara set", pal="Dusty rose / Ivory / Sage", cat=["sharara"], contents="Kurta, sharara", prices=[6700, 7700, 8200, 8700, 9200],
-         fabric="Dusty rose handloom, mirror and resham floral embroidery", detail="Our most heirloom piece. Faded rose base with ivory and sage resham buttis, accented with tiny mirrors and French knots."),
-    dict(id="rosewood-zari", name="Rosewood Zari", sil="Long-sleeve kurta sharara with sequin neckline", pal="Rosewood / Antique gold", cat=["sharara"], contents="Kurta, sharara", prices=[6700, 7700, 8200, 8700, 9200],
-         fabric="Rosewood pink cotton, gold sequin butti, zari yoke", detail="A longer silhouette with full sleeves. Deep neckline densely embroidered in gold sequin, with zari booti scattered across the sharara."),
-    dict(id="haldi-orchard", name="Haldi Orchard", sil="Tie-up peplum + booti sharara", pal="Mustard / Marigold / Ecru", cat=["peplum", "sharara"], contents="Peplum top, sharara", prices=[6700, 7700, 8200, 8700, 9200],
-         fabric="Mustard yellow cotton, tie-up yoke, hand-embroidered booti", detail="Front tie-up peplum with heavy yoke embroidery and tiny tassels. Sharara covered in all-over miniature floral buttis. Sunlit and festive.", styling="Haldi or Basant. Keep accessories minimal."),
-    dict(id="lime-bahaar", name="Lime Bahaar", sil="Yoke-embroidered kurta sharara", pal="Chartreuse / Gulabi / Lime leaf", cat=["sharara"], contents="Kurta, sharara", prices=[6000, 7000, 7500, 8000, 8500],
-         fabric="Lime chartreuse cotton, pink gota and yoke embroidery", detail="Unexpected and joyful. Chartreuse kurta with a dense floral yoke and contrast pink gota at the tiered sharara seams. A favourite for photos."),
-    dict(id="colorblock-bagh", name="Color Block Bagh", sil="Gingham + ivory embroidered top & skirt", pal="Pink / Chikankari ivory / Garden green", cat=["coord"], contents="Top, skirt", prices=[6000, 7000, 7500, 8000, 8500],
-         fabric="Pink gingham, ivory chikankari embroidery, cotton skirt", detail="Playful colorblock. Pink gingham bodice with an ivory embroidered yoke and a full gathered skirt in ivory with gingham facing. Festive but light."),
-    dict(id="colorblock-bagh-sunshine", name="Color Block Bagh", variant="Sunshine", sil="Gingham + botanical panel top & skirt", pal="Sunshine / Teal / Ivory", cat=["coord"], contents="Top, skirt", prices=[6000, 7000, 7500, 8000, 8500],
-         fabric="Yellow gingham and teal botanical print cotton, lace trim", detail="The same garden colorblock in sunshine yellow. Gingham and teal botanical panels on the top and gathered skirt, finished with a soft lace hem."),
-    dict(id="blush-blossom-dress", name="Blush Blossom Dress", sil="Embellished bodice + tiered tulle dress", pal="Blush / Ivory / Soft gold", cat=["dress"], contents="Dress", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 40%",
-         fabric="Blush tulle in gathered tiers, hand-embellished bodice", detail="A cloud of blush tulle. Flutter sleeves and a bodice scattered with hand-embellished flowers, over a full tiered skirt made for twirling.", styling="Birthdays and garden parties."),
-    dict(id="little-bloom-dress", name="Little Bloom Dress", sil="Strappy tulle dress with appliqué flowers", pal="Ivory / Lilac / Lemon / Coral", cat=["dress"], contents="Dress", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 35%",
-         fabric="Ivory tulle skirt, satin bodice, hand-applied fabric flowers", detail="An ivory tulle dress with pastel flowers scattered across the bodice and skirt, as if they had just drifted down from the garden."),
-    dict(id="mint-blossom-lehnga", name="Mint Blossom Lehnga", sil="Embellished choli + flared lehnga", pal="Mint / Soft gold / Rose", cat=["lehenga"], contents="Choli, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 30%",
-         fabric="Mint lehnga and choli with sequin and bead handwork", detail="A mint choli with delicate handwork and an airy flared lehnga, finished with an embellished waist and a tasselled tie."),
-    dict(id="lemon-blossom-lehnga-set", name="Lemon Blossom Lehnga Set", sil="Strappy peplum top + tiered lehnga", pal="Lemon / Lilac / Coral", cat=["lehenga", "peplum"], contents="Peplum top, lehnga", prices=[6700, 7700, 8200, 8700, 9200], pos="50% 25%", new=True,
-         fabric="Lemon gingham cotton with tropical floral print, bead-edged hems", detail="The garden print in soft lemon. A strappy peplum top over a three-tier lehnga, with lilac and coral blooms across the checks and a fine beaded edge on every tier.", styling="Diwali evenings and haldi mornings."),
-    dict(id="botanical-garden-bow-set", name="Botanical Garden Bow Set", sil="Bow-front top + frill-hem pants", pal="Ivory / Wildflower / Blush", cat=["coord"], contents="Top, pants", prices=[4500, 5500, 6000, 6500, 7000], pos="50% 25%", new=True,
-         fabric="Ivory cotton with a scattered botanical print, blush ribbon bows", detail="An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."),
-    dict(id="sunny-meadow-jumpsuit", name="Sunny Meadow Jumpsuit", sil="Flutter-sleeve gingham jumpsuit", pal="Sunshine / Iris / Daisy", cat=["coord"], contents="Jumpsuit", prices=[4500, 5500, 6000, 6500, 7000], pos="50% 22%", new=True,
-         fabric="Yellow gingham cotton, meadow-flower border print", detail="A sunny yellow gingham jumpsuit with flutter sleeves and a square neck. Wide legs carry a border of irises and daisies along the hem.", styling="Garden picnics and birthday lunches."),
-    dict(id="gardenia-bandi-set", name="Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Sage / Rose / Fern", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 30%",
-         fabric="Sage kurta and pyjama, rose botanical print bandi", detail="For little brothers. A relaxed sage kurta and pyjama under a rose bandi printed with garden botanicals."),
-    dict(id="lemon-gardenia-bandi-set", name="Lemon Gardenia Bandi Set", sil="Kurta pyjama + botanical bandi jacket", pal="Lemon / Ivory / Lilac", cat=["boys"], contents="Kurta, pyjama, bandi jacket", prices=[5300, 6300, 6800, 7300, 7800], pos="50% 14%", new=True,
-         fabric="Ivory kurta and pyjama, lemon gingham bandi with botanical print", detail="For little brothers. An ivory kurta and pyjama under a lemon gingham bandi printed with lilac and coral garden flowers. Pairs with the Lemon Blossom Lehnga Set."),
-]
+# The looks live in catalog/looks.json so they can be edited from the admin page (/admin) as well as by hand.
+# Each look uses the fields described above, plus:
+#   discountPct  optional number: takes this % off every size and shows the original price struck through.
+#   hidden       optional, True keeps the look (and its photo) in the files but off the website.
+LOOKS = json.loads((ROOT / "catalog" / "looks.json").read_text(encoding="utf-8"))
 FILTERS = [("all", "All looks", None), ("sharara", "Sharara sets", "lavender-meadow"), ("peplum", "Peplum sets", "daffodil-picnic"), ("kurta", "Kurta sets", "nilgiri"),
            ("coord", "Co-ords &amp; jumpsuits", "colorblock-bagh"), ("dress", "Dresses", "blush-blossom-dress"), ("lehenga", "Lehngas", "mint-blossom-lehnga"), ("boys", "Boys", "gardenia-bandi-set")]
 FEATURED = ["lavender-meadow", "blush-blossom-dress", "haldi-orchard", "little-bloom-dress"]
@@ -140,7 +107,12 @@ e = html.escape
 BY_ID = {l["id"]: l for l in LOOKS}
 for l in LOOKS:
     l.setdefault("pos", "50% 35%")
+    l.setdefault("cat", []); l.setdefault("sil", ""); l.setdefault("pal", ""); l.setdefault("fabric", ""); l.setdefault("detail", "")
     l["sizes"] = SIZES
+    pct = l.get("discountPct") or 0
+    if l.get("prices") and 0 < pct < 100:      # sale: the listed prices become the struck-through originals
+        l["mrp"] = list(l["prices"]); l["prices"] = [int(round(p * (100 - pct) / 100)) for p in l["prices"]]
+    l["soldout_all"] = bool(l.get("soldout")) and set(SIZES) <= set(l.get("soldout") or [])
     l["priceBySize"] = {sz: l["prices"][i // 2] for i, sz in enumerate(SIZES)} if l.get("prices") else None
     l["mrpBySize"] = {sz: l["mrp"][i // 2] for i, sz in enumerate(SIZES)} if l.get("mrp") else None
     l.setdefault("soldout", [])
@@ -157,6 +129,10 @@ def gallery_names(l):
 for l in LOOKS:
     if not src_img(l["id"]): raise SystemExit(f"Missing photo for look '{l['id']}': add src/img-orig/{l['id']}.jpg")
     l["gallery"] = gallery_names(l)
+ALL_LOOKS = LOOKS                                   # every look, hidden ones included (their photos are still built)
+LOOKS = [l for l in ALL_LOOKS if not l.get("hidden")]   # what the website shows and sells
+_shown = {l["id"] for l in LOOKS}
+FEATURED = [i for i in FEATURED if i in _shown]
 IG = f"https://www.instagram.com/{SHOP['instagram']}/"
 WA_NUM = SHOP["whatsapp"]
 WA_DISPLAY = (f"+{WA_NUM[:2]} {WA_NUM[2:7]} {WA_NUM[7:]}" if len(WA_NUM) == 12 else f"+{WA_NUM}") if WA_NUM else ""
@@ -196,7 +172,7 @@ def price_html(l):
 
 
 def card(l, n=None):
-    tag = '<span class="tag">New</span>' if l.get("new") else ('<span class="tag">Sale</span>' if l.get("mrp") else "")
+    tag = ('<span class="tag out">Sold out</span>' if l.get("soldout_all") else '<span class="tag">Sale</span>' if l.get("mrp") else '<span class="tag">New</span>' if l.get("new") else "")
     second = (f'<span class="alt">{img(l["gallery"][1], "", pos=l["pos"])}</span>' if len(l["gallery"]) > 1 else "")
     return (f'<a class="card" href="/looks/{l["id"]}" data-cat="{" ".join(l["cat"])}">'
             f'<div class="arch">{img(l["id"], full(l) + ": " + l["sil"], pos=l["pos"])}{second}{tag}</div>'
@@ -556,7 +532,7 @@ def look(l, prev, nxt):
         <div class="sizepick boxes" id="look-sizes">{size_html}</div>
       </div>
       <div class="buy">
-        <button class="btn" type="button" id="look-add">Add to bag</button>
+        <button class="btn" type="button" id="look-add"{" disabled" if l["soldout_all"] else ""}>{"Sold out" if l["soldout_all"] else "Add to bag"}</button>
         {'<button class="btn ghost" id="look-buy" type="button">Buy it now</button>' if STORE else f'<a class="btn ghost" id="look-buy" href="{"#" if WA_NUM else DM}" target="_blank" rel="noopener">Buy it now</a>'}
         <p class="added" id="look-added" role="status"></p>
       </div>
@@ -1019,7 +995,8 @@ def checkout_page():
       <span class="eyebrow">Your order</span>
       <div id="co-items"></div>
       <div class="sum-row"><span>Subtotal</span><b id="co-sub">–</b></div>
-      <div class="sum-row offer" id="co-disc-row" hidden><span>Welcome offer ({SHOP.get("welcomePct") or 0}% off)</span><b id="co-disc">–</b></div>
+      <div class="coupon"><label for="co-coupon">Coupon code</label><div><input id="co-coupon" type="text" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="Enter code"><button class="btn ghost" type="button" id="co-coupon-go">Apply</button></div><p class="co-coupon-msg" id="co-coupon-msg" role="status"></p></div>
+      <div class="sum-row offer" id="co-disc-row" hidden><span id="co-disc-label">Welcome offer</span><b id="co-disc">–</b></div>
       <div class="sum-row"><span>Delivery</span><b id="co-ship">–</b></div>
       <div class="sum-row total"><span>Total</span><b id="co-total">–</b></div>
       <p class="hint">Free delivery across India above {rupees(P['free_above'])}. Dispatched within {P['dispatch']}.</p>
@@ -1044,6 +1021,125 @@ def order_page():
     return layout("/order", "Your order · Blush Tiny Blossoms", "Order confirmation.", body, noindex=True)
 
 
+def admin_page():
+    """/admin: add and edit looks, sold out, discounts. A separate small page; sign-in is checked by the checkout service."""
+    cfg = {"api": SHOP["checkoutApi"], "site": "", "sizes": SIZES, "bands": BANDS}
+    cats = "".join(f'<label class="tick"><input type="checkbox" name="cat" value="{k}"> {lab}</label>' for k, lab, _ in FILTERS[1:])
+    sizes = "".join(f'<label class="tick"><input type="checkbox" name="so" value="{s}"> {s}</label>' for s in SIZES)
+    prices = "".join(f'<label>{b}<input name="p{i}" type="number" inputmode="numeric" min="1" step="1" placeholder="₹"></label>' for i, b in enumerate(BANDS))
+    pos = "".join(f'<option value="{v}">{t}</option>' for v, t in (("50% 15%", "Top (keep the face in view)"), ("50% 30%", "Upper"), ("50% 50%", "Centre"), ("50% 70%", "Lower")))
+    return f"""<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin · {SHOP['name']}</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/site.css?v={VER}">
+<style>
+body{{background:var(--petal)}}
+.ad-wrap{{max-width:900px;margin-inline:auto;padding:22px clamp(16px,4vw,32px) 120px}}
+.ad-top{{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}}
+.ad-top h1{{font-size:clamp(1.7rem,5vw,2.4rem)}}
+.ad-card{{background:var(--milk);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,28px)}}
+#ad-login{{max-width:420px;margin:8vh auto 0;display:flex;flex-direction:column;gap:14px}}
+#ad-login input{{font:inherit;font-size:1rem;border:1px solid var(--line);border-radius:12px;padding:.8em 1em;min-height:48px;background:var(--milk);color:var(--ink)}}
+.ad-note{{color:var(--ink-soft);font-size:.92rem;margin:0}}
+.ad-row{{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}}
+.ad-row:first-child{{border-top:0}}
+.ad-row.off{{opacity:.6}}
+.ad-row img,.ad-row .noimg{{width:64px;height:84px;object-fit:cover;border-radius:10px;background:var(--mist)}}
+.ad-row .noimg{{display:grid;place-items:center;font-size:.6rem;color:var(--ink-soft);text-align:center}}
+.ad-main{{display:flex;flex-direction:column;gap:3px;min-width:0}}
+.ad-main b{{font-weight:500}}
+.ad-main span{{color:var(--ink-soft);font-size:.92rem}}
+.chips{{display:flex;flex-wrap:wrap;gap:6px}}
+.chip{{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:.25em .7em;color:var(--ink-soft)}}
+.chip.dark{{background:var(--ink);color:var(--milk);border-color:var(--ink)}}
+.chip.rose{{color:var(--rose-deep);border-color:var(--rose)}}
+.chip.grey{{background:var(--mist)}}
+.ad-acts{{display:flex;flex-direction:column;gap:6px;align-items:flex-end}}
+.ad-acts .btn{{padding:.55em 1.3em}}
+.linkbtn{{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--rose-deep);text-decoration:underline;cursor:pointer}}
+#ad-bar{{position:fixed;left:0;right:0;bottom:0;background:var(--milk);border-top:1px solid var(--line);padding:12px clamp(16px,4vw,32px) calc(12px + env(safe-area-inset-bottom,0px));display:none;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;z-index:5}}
+#ad-bar.on{{display:flex}}
+#ad-bar p{{margin:0;font-size:.92rem;color:var(--ink-soft)}}
+dialog.ad-dlg{{width:min(720px,calc(100vw - 20px));border-radius:18px}}
+.ad-form{{padding:clamp(18px,4vw,30px);display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}}
+.ad-form h2{{grid-column:1/-1;font-size:1.6rem}}
+.ad-form h3{{grid-column:1/-1;font-family:var(--body);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--rose-deep);font-weight:400;border-top:1px solid var(--line);padding-top:16px;margin:4px 0 0}}
+.ad-form .full,.ad-form .ticks,.ad-form .five{{grid-column:1/-1}}
+.ticks{{display:flex;flex-wrap:wrap;gap:8px 16px}}
+.tick{{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;font-size:.92rem!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important}}
+.tick input{{width:20px;min-height:20px;height:20px;padding:0;accent-color:var(--rose-deep)}}
+.five{{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}}
+.five label{{font-size:.56rem!important;letter-spacing:.08em!important}}
+#ad-photo-prev{{width:110px;height:146px;border-radius:12px;background:var(--mist);overflow:hidden;display:grid;place-items:center;font-size:.72rem;color:var(--ink-soft)}}
+#ad-photo-prev img{{width:100%;height:100%;object-fit:cover}}
+.ad-photo{{grid-column:1/-1;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}}
+.ad-photo>div{{display:flex;flex-direction:column;gap:12px;flex:1;min-width:220px}}
+.ad-btns{{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:center}}
+@media (max-width:620px){{.ad-form{{grid-template-columns:1fr}}.five{{grid-template-columns:repeat(2,minmax(0,1fr))}}.ad-row{{grid-template-columns:56px minmax(0,1fr)}}.ad-acts{{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}}}}
+</style>
+</head>
+<body>
+<div class="ad-wrap" id="admin" data-cfg="{e(json.dumps(cfg, ensure_ascii=False))}">
+  <form class="ad-card" id="ad-login">
+    <span class="eyebrow">{SHOP['name']}</span>
+    <h1 style="font-size:2rem">Shop admin</h1>
+    <label class="field-label" for="ad-pw" style="margin:0">Password</label>
+    <input id="ad-pw" type="password" autocomplete="current-password" required>
+    <p class="co-err" id="ad-login-err" role="alert"></p>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+  <div id="ad-app" hidden>
+    <div class="ad-top"><div><span class="eyebrow">Shop admin</span><h1>The <em>collection</em></h1></div>
+      <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="ad-new">Add a look</button><button class="linkbtn" type="button" id="ad-out">Sign out</button></div></div>
+    <p class="ad-note" id="ad-status" role="status"></p>
+    <div class="ad-card" style="margin-top:14px" id="ad-list"></div>
+    <p class="ad-note" style="margin-top:18px">Coupon codes are kept in the “Coupons” tab of the BlushTinyBlossoms Google Sheet. Add a row or change Active to Yes or No there; it works at checkout straight away.</p>
+  </div>
+</div>
+<div id="ad-bar"><p id="ad-bar-msg"></p><button class="btn" type="button" id="ad-publish">Publish to website</button><button class="linkbtn" type="button" id="ad-discard">Discard changes</button></div>
+<dialog class="ad-dlg" id="ad-edit" aria-labelledby="ad-edit-title">
+  <form class="form ad-form" id="ad-form" novalidate>
+    <h2 id="ad-edit-title">Edit</h2>
+    <label>Name<input name="name" type="text" maxlength="60" required></label>
+    <label>Colourway (optional)<input name="variant" type="text" maxlength="40" placeholder="e.g. Sunshine"></label>
+    <h3>Photos</h3>
+    <div class="ad-photo"><div id="ad-photo-prev"></div>
+      <div><label>Main photo<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <label>More photos for the gallery (optional)<input name="more" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+      <p class="hint" id="ad-more-note"></p>
+      <label>Which part of the photo to keep in view<select name="pos">{pos}</select></label></div></div>
+    <h3>Price by size band (₹)</h3>
+    <div class="five">{prices}</div>
+    <label>Discount %<input name="discountPct" type="number" inputmode="numeric" min="0" max="90" step="1" placeholder="e.g. 20"></label>
+    <p class="hint" id="ad-sale-note" style="align-self:end"></p>
+    <h3>Sold out sizes</h3>
+    <div class="ticks">{sizes}</div>
+    <div class="ad-btns" style="margin-top:-6px"><button class="linkbtn" type="button" id="ad-so-all">All sold out</button><button class="linkbtn" type="button" id="ad-so-none">All available</button></div>
+    <h3>Shown under</h3>
+    <div class="ticks">{cats}</div>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
+    <h3>Description</h3>
+    <label class="full">Short line under the name<input name="sil" type="text" maxlength="120" placeholder="e.g. Strappy peplum top + tiered lehnga"></label>
+    <label>What is in the set<input name="contents" type="text" maxlength="120" placeholder="e.g. Kurta, sharara"></label>
+    <label>Colours<input name="pal" type="text" maxlength="80" placeholder="e.g. Lemon / Lilac / Coral"></label>
+    <label class="full">Fabric<input name="fabric" type="text" maxlength="200"></label>
+    <label class="full">About this look<textarea name="detail" maxlength="700"></textarea></label>
+    <label class="full">Styling note (optional)<input name="styling" type="text" maxlength="200"></label>
+    <p class="co-err" id="ad-edit-err" role="alert"></p>
+    <div class="ad-btns"><button class="btn" type="submit">Done</button><button class="btn ghost" type="button" id="ad-cancel">Cancel</button><span style="flex:1"></span><button class="linkbtn" type="button" id="ad-del">Remove this look</button></div>
+  </form>
+</dialog>
+<script src="/assets/admin.js?v={VER}"></script>
+</body>
+</html>
+"""
+
+
 def notfound():
     body = f"""<section class="section lost"><div class="wrap cta-band">
   <span style="color:var(--rose)">{BLOSSOM.replace('class="blossom"', 'class="blossom" style="width:34px;height:34px"')}</span>
@@ -1056,7 +1152,7 @@ def notfound():
 
 def images():
     out = DIST / "img"; out.mkdir(parents=True)
-    for l in LOOKS:
+    for l in ALL_LOOKS:
         for name in l["gallery"]:
             im = Image.open(src_img(name)).convert("RGB")
             DIMS[name] = (960, round(im.height * 960 / im.width))
@@ -1119,6 +1215,7 @@ def main():
     (DIST / "assets/site.css").write_text(css)
     (DIST / "assets/site.js").write_text(js)
     (DIST / "assets/data.js").write_text(data_js)
+    (DIST / "assets/admin.js").write_text((SRC / "admin.js").read_text())
     # Prices for the checkout service: it reads this file from the live site, so prices are always checked against the site.
     cat = {"looks": {l["id"]: {k: l.get(k) for k in ("id", "name", "variant", "priceBySize", "soldout")} for l in LOOKS},
            "shipping": {"free_above": P["free_above"], "fee": P["ship_fee"]}}
@@ -1126,6 +1223,7 @@ def main():
     pages = {"index.html": home(), "collection.html": collection(), "our-story.html": story(), "size-care.html": size_care(),
              "faq.html": faq_page(), "terms.html": terms_page(), "checkout.html": checkout_page(), "order.html": order_page(),
              "contact.html": contact(), "bag.html": bag(), "404.html": notfound()}
+    if SHOP["checkoutApi"]: pages["admin.html"] = admin_page()
     (DIST / "looks").mkdir()
     for i, l in enumerate(LOOKS):
         pages[f"looks/{l['id']}.html"] = look(l, LOOKS[i - 1], LOOKS[(i + 1) % len(LOOKS)])
