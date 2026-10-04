@@ -37,6 +37,7 @@
    8700,
    9200
   ],
+  "pos": "50% 30%",
   "fabric": "Blush pink gingham, tropical botanical print, cotton voile lining",
   "detail": "Signature strappy peplum with gathered hem, paired with a three-tier sharara. Hand-printed monstera and hibiscus in sage and rose.",
   "styling": "For a poolside mehendi. Add pearl flats."
@@ -57,6 +58,7 @@
    7700,
    8200
   ],
+  "pos": "50% 30%",
   "fabric": "Teal cotton, hand-block tropical florals, pink triangle gota",
   "detail": "A quiet statement. Full sleeves, straight kurta with contrast pyjama. Inverted pink gota triangles at the hem and a tropical vine print at the border.",
   "styling": "Brother-sister twinning ready."
@@ -77,6 +79,7 @@
    6500,
    7000
   ],
+  "pos": "50% 30%",
   "fabric": "Pink gingham, ruffle cap sleeves, daffodil border print",
   "detail": "Frill-sleeve peplum that flares like a tea rose. Wide palazzo with a hand-painted daffodil garden running along the hem.",
   "styling": "Birthday garden party. Mini potli in ivory."
@@ -97,6 +100,7 @@
    8700,
    9200
   ],
+  "pos": "50% 30%",
   "fabric": "Dusty rose handloom, mirror and resham floral embroidery",
   "detail": "Our most heirloom piece. Faded rose base with ivory and sage resham buttis, accented with tiny mirrors and French knots."
  },
@@ -116,6 +120,7 @@
    8700,
    9200
   ],
+  "pos": "50% 30%",
   "fabric": "Rosewood pink cotton, gold sequin butti, zari yoke",
   "detail": "A longer silhouette with full sleeves. Deep neckline densely embroidered in gold sequin, with zari booti scattered across the sharara."
  },
@@ -136,6 +141,7 @@
    8700,
    9200
   ],
+  "pos": "50% 30%",
   "fabric": "Mustard yellow cotton, tie-up yoke, hand-embroidered booti",
   "detail": "Front tie-up peplum with heavy yoke embroidery and tiny tassels. Sharara covered in all-over miniature floral buttis. Sunlit and festive.",
   "styling": "Haldi or Basant. Keep accessories minimal."
@@ -156,6 +162,7 @@
    8000,
    8500
   ],
+  "pos": "50% 30%",
   "fabric": "Lime chartreuse cotton, pink gota and yoke embroidery",
   "detail": "Unexpected and joyful. Chartreuse kurta with a dense floral yoke and contrast pink gota at the tiered sharara seams. A favourite for photos."
  },
@@ -175,6 +182,7 @@
    8000,
    8500
   ],
+  "pos": "50% 30%",
   "fabric": "Pink gingham, ivory chikankari embroidery, cotton skirt",
   "detail": "Playful colorblock. Pink gingham bodice with an ivory embroidered yoke and a full gathered skirt in ivory with gingham facing. Festive but light."
  },
@@ -195,6 +203,7 @@
    8000,
    8500
   ],
+  "pos": "50% 30%",
   "fabric": "Yellow gingham and teal botanical print cotton, lace trim",
   "detail": "The same garden colorblock in sunshine yellow. Gingham and teal botanical panels on the top and gathered skirt, finished with a soft lace hem."
  },
@@ -298,8 +307,18 @@
    6500,
    7000
   ],
-  "pos": "50% 25%",
-  "new": true,
+  "soldout": [
+   "4–5Y",
+   "5–6Y",
+   "6–7Y",
+   "7–8Y",
+   "8–9Y",
+   "9–10Y",
+   "10–11Y",
+   "11–12Y",
+   "12–13Y"
+  ],
+  "pos": "50% 30%",
   "fabric": "Ivory cotton with a scattered botanical print, blush ribbon bows",
   "detail": "An ivory set printed with little wildflowers. Frill cap sleeves, four blush bows down the front of the top, and easy wide pants finished with a frill at the hem."
  },
@@ -318,6 +337,18 @@
    6000,
    6500,
    7000
+  ],
+  "soldout": [
+   "3–4Y",
+   "4–5Y",
+   "5–6Y",
+   "6–7Y",
+   "7–8Y",
+   "8–9Y",
+   "9–10Y",
+   "10–11Y",
+   "11–12Y",
+   "12–13Y"
   ],
   "pos": "50% 22%",
   "new": true,
