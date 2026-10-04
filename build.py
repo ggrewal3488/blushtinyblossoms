@@ -623,7 +623,7 @@ def story():
   <div class="wrap split" style="align-items:center">
     <div class="duo">
       <div class="arch">{img("blush-blossom-dress", "Little girl in the Blush Blossom Dress at a garden party", "(max-width:820px) 45vw, 24vw", pos="50% 30%")}</div>
-      <div class="arch">{img("gulab-dust", "Girl in the Gulab Dust embroidered kurta sharara", "(max-width:820px) 45vw, 24vw")}</div>
+      <div class="arch">{img("mint-blossom-lehnga", "Little girl in the Mint Blossom Lehnga", "(max-width:820px) 45vw, 24vw", pos="50% 22%")}</div>
     </div>
     <div class="story-copy">
       <span class="eyebrow">How it began</span>
