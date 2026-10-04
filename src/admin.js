@@ -51,22 +51,38 @@
         out ? '<span class="chip dark">Sold out</span>' : n ? '<span class="chip">' + n + " size" + (n > 1 ? "s" : "") + " sold out</span>" : "",
         l.discountPct ? '<span class="chip rose">' + l.discountPct + "% off</span>" : "",
         l.new ? '<span class="chip">New</span>' : "",
+        l.restock ? '<span class="chip">Back in stock</span>' : "",
       ].join("");
       const price = l.prices ? (l.discountPct ? "<s>" + money(Math.min(...l.prices)) + "</s> " : "") + "From " + money(salePrice(Math.min(...l.prices), l)) : "Price on request";
       return '<div class="ad-row' + (l.hidden ? " off" : "") + '">' +
         (t ? '<img src="' + esc(t) + '" alt="" style="object-position:' + esc(l.pos || "50% 30%") + '">' : '<div class="noimg">No photo</div>') +
         '<div class="ad-main"><b>' + esc(l.name) + (l.variant ? " · " + esc(l.variant) : "") + '</b><span>' + price + '</span><div class="chips">' + chips + "</div></div>" +
-        '<div class="ad-acts"><button type="button" class="btn ghost" data-edit="' + i + '">Edit</button>' +
+        '<div class="ad-acts"><div class="ad-ord"><button type="button" data-up="' + i + '" aria-label="Move ' + esc(l.name) + ' up"' + (i ? "" : " disabled") + '>▲</button>' +
+        '<input type="number" inputmode="numeric" min="1" max="' + looks.length + '" value="' + (i + 1) + '" data-rank="' + i + '" aria-label="Position of ' + esc(l.name) + '">' +
+        '<button type="button" data-down="' + i + '" aria-label="Move ' + esc(l.name) + ' down"' + (i < looks.length - 1 ? "" : " disabled") + '>▼</button></div>' +
+        '<button type="button" class="btn ghost" data-edit="' + i + '">Edit</button>' +
         '<button type="button" class="linkbtn" data-out="' + i + '">' + (out ? "Mark available" : "Mark sold out") + "</button></div></div>";
     }).join("");
     bar.classList.toggle("on", dirty());
     barMsg.textContent = dirty() ? "You have changes that are not on the website yet." : "";
   }
   list.addEventListener("click", e => {
-    const ed = e.target.closest("[data-edit]"), so = e.target.closest("[data-out]");
+    const ed = e.target.closest("[data-edit]"), so = e.target.closest("[data-out]"), up = e.target.closest("[data-up]"), dn = e.target.closest("[data-down]");
+    if (up) move(+up.dataset.up, +up.dataset.up - 1, "up");
+    if (dn) move(+dn.dataset.down, +dn.dataset.down + 1, "down");
     if (ed) openEditor(+ed.dataset.edit);
     if (so) { const l = looks[+so.dataset.out]; if (allOut(l)) delete l.soldout; else l.soldout = SIZES.slice(); render(); }
   });
+  /* order: the list order is the order on the website (New looks are lifted to the front when the site is built) */
+  function move(from, to, focus) {
+    to = Math.max(0, Math.min(looks.length - 1, to));
+    if (to === from || !(to >= 0)) { render(); return; }
+    looks.splice(to, 0, looks.splice(from, 1)[0]); render();
+    const el = focus && list.querySelector("[data-" + focus + '="' + to + '"]');
+    if (el && !el.disabled) el.focus(); else if (focus) { const r = list.querySelector('[data-rank="' + to + '"]'); if (r) r.focus(); }
+  }
+  list.addEventListener("change", e => { const r = e.target.closest("[data-rank]"); if (r) move(+r.dataset.rank, Math.round(Number(r.value) || 0) - 1); });
+  list.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.closest("[data-rank]")) { e.preventDefault(); e.target.blur(); } });
   $("#ad-new").addEventListener("click", () => openEditor(-1));
   $("#ad-discard").addEventListener("click", () => { looks = JSON.parse(saved); uploads = {}; render(); });
 
@@ -85,7 +101,7 @@
     $$("[name=cat]", f).forEach(c => (c.checked = (l.cat || []).includes(c.value)));
     $$("[name=so]", f).forEach(c => (c.checked = (l.soldout || []).includes(c.value)));
     f.pos.value = POS.some(p => p[0] === l.pos) ? l.pos : "50% 30%";
-    f.isnew.checked = !!l.new; f.hidden.checked = !!l.hidden;
+    f.isnew.checked = !!l.new; f.restock.checked = !!l.restock && !l.new; f.hidden.checked = !!l.hidden;
     f.photo.value = ""; f.more.value = "";
     const t = i < 0 ? "" : thumb(l);
     $("#ad-photo-prev").innerHTML = t ? '<img src="' + esc(t) + '" alt="">' : "<span>No photo yet</span>";
@@ -98,6 +114,8 @@
     $("#ad-sale-note").textContent = p && d > 0 && d <= 90 ? "Shows as " + money(Math.round(p * (100 - d) / 100)) + " with " + money(p) + " struck through (first size band)." : "Leave empty for no discount.";
   };
   f.addEventListener("input", paintSale);
+  f.isnew.addEventListener("change", () => { if (f.isnew.checked) f.restock.checked = false; });   // one tag at a time
+  f.restock.addEventListener("change", () => { if (f.restock.checked) f.isnew.checked = false; });
   $("#ad-so-all").addEventListener("click", () => $$("[name=so]", f).forEach(c => (c.checked = true)));
   $("#ad-so-none").addEventListener("click", () => $$("[name=so]", f).forEach(c => (c.checked = false)));
   $("#ad-cancel").addEventListener("click", () => dlg.close());
@@ -158,7 +176,7 @@
       pos: f.pos.value, fabric: f.fabric.value.trim(), detail: f.detail.value.trim() });
     const set = (k, v) => { if (v) l[k] = v; else delete l[k]; };
     set("variant", variant); set("styling", f.styling.value.trim()); set("prices", prices); set("discountPct", prices && d ? d : 0);
-    set("new", f.isnew.checked); set("hidden", f.hidden.checked);
+    set("new", f.isnew.checked); set("restock", f.restock.checked); set("hidden", f.hidden.checked);
     const so = $$("[name=so]:checked", f).map(c => c.value); set("soldout", so.length ? so : 0);
     if (pend.main) uploads[l.id] = pend.main;
     if (pend.more && pend.more.length) {

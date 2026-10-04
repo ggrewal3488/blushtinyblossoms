@@ -58,6 +58,7 @@ BANDS = ["3–4Y & 4–5Y", "5–6Y & 6–7Y", "7–8Y & 8–9Y", "9–10Y & 10�
 #   prices    five numbers, one per band above (from the "Collection Pricing" Google Sheet). None shows "Price on request".
 #   mrp       optional, five numbers: shows a struck-through original price next to the price (for a sale).
 #   contents  the pieces in the set, comma separated ("Kurta, sharara"); the look page shows the piece count.
+#   restock   optional true: shows a "Back in stock" tag on the card.
 #   soldout   optional list of sizes that are sold out, e.g. ["3–4Y", "12–13Y"].
 #   new       optional, True shows a "New" tag on the card.
 # The looks live in catalog/looks.json so they can be edited from the admin page (/admin) as well as by hand.
@@ -131,6 +132,8 @@ for l in LOOKS:
     l["gallery"] = gallery_names(l)
 ALL_LOOKS = LOOKS                                   # every look, hidden ones included (their photos are still built)
 LOOKS = [l for l in ALL_LOOKS if not l.get("hidden")]   # what the website shows and sells
+# Order on the website: looks tagged New come first; otherwise the order of catalog/looks.json (set by the arrows on /admin).
+LOOKS.sort(key=lambda l: 0 if l.get("new") else 1)    # stable sort, so the saved order is kept inside each group
 _shown = {l["id"] for l in LOOKS}
 FEATURED = [i for i in FEATURED if i in _shown]
 IG = f"https://www.instagram.com/{SHOP['instagram']}/"
@@ -172,7 +175,7 @@ def price_html(l):
 
 
 def card(l, n=None):
-    tag = ('<span class="tag out">Sold out</span>' if l.get("soldout_all") else '<span class="tag">Sale</span>' if l.get("mrp") else '<span class="tag">New</span>' if l.get("new") else "")
+    tag = ('<span class="tag out">Sold out</span>' if l.get("soldout_all") else '<span class="tag">Sale</span>' if l.get("mrp") else '<span class="tag">New</span>' if l.get("new") else '<span class="tag">Back in stock</span>' if l.get("restock") else "")
     second = (f'<span class="alt">{img(l["gallery"][1], "", pos=l["pos"])}</span>' if len(l["gallery"]) > 1 else "")
     return (f'<a class="card" href="/looks/{l["id"]}" data-cat="{" ".join(l["cat"])}">'
             f'<div class="arch">{img(l["id"], full(l) + ": " + l["sil"], pos=l["pos"])}{second}{tag}</div>'
@@ -487,7 +490,8 @@ SHARE_ICONS = {
 
 def look(l, prev, nxt):
     sizes = l["sizes"]
-    size_html = ("".join(f'<button type="button" aria-pressed="false"{" disabled" if s in l["soldout"] else ""}>{s}</button>' for s in sizes) if sizes
+    size_html = ("".join((f'<button type="button" class="gone" disabled aria-label="{s}, sold out"><s>{s}</s><small>Sold out</small></button>' if s in l["soldout"]
+                          else f'<button type="button" aria-pressed="false">{s}</button>') for s in sizes) if sizes
                  else '<span class="hint">Sizes on request. Tell us your child’s age and we will guide you.</span>')
     url = f"{SHOP['domain']}/looks/{l['id']}"
     g = l["gallery"]
@@ -1061,6 +1065,11 @@ body{{background:var(--petal)}}
 .chip.grey{{background:var(--mist)}}
 .ad-acts{{display:flex;flex-direction:column;gap:6px;align-items:flex-end}}
 .ad-acts .btn{{padding:.55em 1.3em}}
+.ad-ord{{display:flex;align-items:center;gap:4px}}
+.ad-ord button{{width:34px;height:34px;border:1px solid var(--line);border-radius:999px;background:var(--milk);color:var(--ink);font-size:.8rem;line-height:1;cursor:pointer}}
+.ad-ord button:disabled{{opacity:.3;cursor:default}}
+.ad-ord input{{width:46px;height:34px;min-height:0;text-align:center;border:1px solid var(--line);border-radius:10px;background:var(--milk);color:var(--ink);font:inherit;font-size:.9rem;padding:0;-moz-appearance:textfield}}
+.ad-ord input::-webkit-inner-spin-button{{-webkit-appearance:none}}
 .linkbtn{{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--rose-deep);text-decoration:underline;cursor:pointer}}
 #ad-bar{{position:fixed;left:0;right:0;bottom:0;background:var(--milk);border-top:1px solid var(--line);padding:12px clamp(16px,4vw,32px) calc(12px + env(safe-area-inset-bottom,0px));display:none;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;z-index:5}}
 #ad-bar.on{{display:flex}}
@@ -1097,6 +1106,7 @@ dialog.ad-dlg{{width:min(720px,calc(100vw - 20px));border-radius:18px}}
     <div class="ad-top"><div><span class="eyebrow">Shop admin</span><h1>The <em>collection</em></h1></div>
       <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="ad-new">Add a look</button><button class="linkbtn" type="button" id="ad-out">Sign out</button></div></div>
     <p class="ad-note" id="ad-status" role="status"></p>
+    <p class="ad-note" style="margin-top:10px">Order on the website: use the arrows, or type a position number, to move a look up or down. Looks with the “New” tag always show first, in this order among themselves.</p>
     <div class="ad-card" style="margin-top:14px" id="ad-list"></div>
     <p class="ad-note" style="margin-top:18px">Coupon codes are kept in the “Coupons” tab of the BlushTinyBlossoms Google Sheet. Add a row or change Active to Yes or No there; it works at checkout straight away.</p>
   </div>
@@ -1122,7 +1132,7 @@ dialog.ad-dlg{{width:min(720px,calc(100vw - 20px));border-radius:18px}}
     <div class="ad-btns" style="margin-top:-6px"><button class="linkbtn" type="button" id="ad-so-all">All sold out</button><button class="linkbtn" type="button" id="ad-so-none">All available</button></div>
     <h3>Shown under</h3>
     <div class="ticks">{cats}</div>
-    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag (also puts it first)</label><label class="tick"><input type="checkbox" name="restock"> Show the “Back in stock” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
     <h3>Description</h3>
     <label class="full">Short line under the name<input name="sil" type="text" maxlength="120" placeholder="e.g. Strappy peplum top + tiered lehnga"></label>
     <label>What is in the set<input name="contents" type="text" maxlength="120" placeholder="e.g. Kurta, sharara"></label>

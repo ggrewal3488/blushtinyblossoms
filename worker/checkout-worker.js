@@ -345,6 +345,7 @@ function cleanLooks(list) {
     if (so.length) out.soldout = SIZES.filter(s => so.includes(s));
     out.pos = /^\d{1,3}% \d{1,3}%$/.test(l.pos || "") ? l.pos : "50% 30%";
     if (l.new) out.new = true;
+    if (l.restock) out.restock = true;
     if (l.hidden) out.hidden = true;
     out.fabric = txt(l.fabric, 200); out.detail = txt(l.detail, 700);
     if (txt(l.styling, 200)) out.styling = txt(l.styling, 200);

@@ -6,7 +6,7 @@
 <title>Admin · Blush Tiny Blossoms</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="favicon.png" type="image/png">
-<link rel="stylesheet" href="assets/site.css?v=7b5cb251">
+<link rel="stylesheet" href="assets/site.css?v=9f0d91e4">
 <style>
 body{background:var(--petal)}
 .ad-wrap{max-width:900px;margin-inline:auto;padding:22px clamp(16px,4vw,32px) 120px}
@@ -31,6 +31,11 @@ body{background:var(--petal)}
 .chip.grey{background:var(--mist)}
 .ad-acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .ad-acts .btn{padding:.55em 1.3em}
+.ad-ord{display:flex;align-items:center;gap:4px}
+.ad-ord button{width:34px;height:34px;border:1px solid var(--line);border-radius:999px;background:var(--milk);color:var(--ink);font-size:.8rem;line-height:1;cursor:pointer}
+.ad-ord button:disabled{opacity:.3;cursor:default}
+.ad-ord input{width:46px;height:34px;min-height:0;text-align:center;border:1px solid var(--line);border-radius:10px;background:var(--milk);color:var(--ink);font:inherit;font-size:.9rem;padding:0;-moz-appearance:textfield}
+.ad-ord input::-webkit-inner-spin-button{-webkit-appearance:none}
 .linkbtn{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--rose-deep);text-decoration:underline;cursor:pointer}
 #ad-bar{position:fixed;left:0;right:0;bottom:0;background:var(--milk);border-top:1px solid var(--line);padding:12px clamp(16px,4vw,32px) calc(12px + env(safe-area-inset-bottom,0px));display:none;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;z-index:5}
 #ad-bar.on{display:flex}
@@ -67,6 +72,7 @@ dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
     <div class="ad-top"><div><span class="eyebrow">Shop admin</span><h1>The <em>collection</em></h1></div>
       <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="ad-new">Add a look</button><button class="linkbtn" type="button" id="ad-out">Sign out</button></div></div>
     <p class="ad-note" id="ad-status" role="status"></p>
+    <p class="ad-note" style="margin-top:10px">Order on the website: use the arrows, or type a position number, to move a look up or down. Looks with the “New” tag always show first, in this order among themselves.</p>
     <div class="ad-card" style="margin-top:14px" id="ad-list"></div>
     <p class="ad-note" style="margin-top:18px">Coupon codes are kept in the “Coupons” tab of the BlushTinyBlossoms Google Sheet. Add a row or change Active to Yes or No there; it works at checkout straight away.</p>
   </div>
@@ -92,7 +98,7 @@ dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
     <div class="ad-btns" style="margin-top:-6px"><button class="linkbtn" type="button" id="ad-so-all">All sold out</button><button class="linkbtn" type="button" id="ad-so-none">All available</button></div>
     <h3>Shown under</h3>
     <div class="ticks"><label class="tick"><input type="checkbox" name="cat" value="sharara"> Sharara sets</label><label class="tick"><input type="checkbox" name="cat" value="peplum"> Peplum sets</label><label class="tick"><input type="checkbox" name="cat" value="kurta"> Kurta sets</label><label class="tick"><input type="checkbox" name="cat" value="coord"> Co-ords &amp; jumpsuits</label><label class="tick"><input type="checkbox" name="cat" value="dress"> Dresses</label><label class="tick"><input type="checkbox" name="cat" value="lehenga"> Lehngas</label><label class="tick"><input type="checkbox" name="cat" value="boys"> Boys</label></div>
-    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
+    <div class="ticks"><label class="tick"><input type="checkbox" name="isnew"> Show the “New” tag (also puts it first)</label><label class="tick"><input type="checkbox" name="restock"> Show the “Back in stock” tag</label><label class="tick"><input type="checkbox" name="hidden"> Hide from the website</label></div>
     <h3>Description</h3>
     <label class="full">Short line under the name<input name="sil" type="text" maxlength="120" placeholder="e.g. Strappy peplum top + tiered lehnga"></label>
     <label>What is in the set<input name="contents" type="text" maxlength="120" placeholder="e.g. Kurta, sharara"></label>
@@ -104,6 +110,6 @@ dialog.ad-dlg{width:min(720px,calc(100vw - 20px));border-radius:18px}
     <div class="ad-btns"><button class="btn" type="submit">Done</button><button class="btn ghost" type="button" id="ad-cancel">Cancel</button><span style="flex:1"></span><button class="linkbtn" type="button" id="ad-del">Remove this look</button></div>
   </form>
 </dialog>
-<script src="assets/admin.js?v=7b5cb251"></script>
+<script src="assets/admin.js?v=9f0d91e4"></script>
 </body>
 </html>

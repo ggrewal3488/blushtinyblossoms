@@ -429,7 +429,10 @@ h2{font-size:clamp(1.85rem,3.9vw,3.05rem)}
 .sizepick.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
 .sizepick.boxes button{border-radius:2px;min-height:44px;padding:.4em .2em;font-size:.76rem;letter-spacing:.08em;border-color:#E6D4D8;background:var(--milk)}
 .sizepick.boxes button:hover{border-color:var(--ink)}
-.sizepick button:disabled{color:#B9A9B0;text-decoration:line-through;cursor:not-allowed;background:var(--mist)}
+.sizepick button:disabled{color:#B9A9B0;cursor:not-allowed;background:var(--mist)}
+.sizepick button.gone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1}
+.sizepick button.gone s{text-decoration:line-through;text-decoration-thickness:1.5px}
+.sizepick button.gone small{font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--rose-deep);white-space:nowrap}
 #size-chosen{color:var(--ink)}
 .buy{display:flex;flex-direction:column;gap:10px}
 .buy .btn{width:100%;border-radius:2px;padding:1.1em 2em}
