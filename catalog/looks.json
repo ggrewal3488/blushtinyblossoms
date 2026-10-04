@@ -301,22 +301,11 @@
   ],
   "contents": "Top, pants",
   "prices": [
+   3500,
    4500,
    5500,
    6000,
-   6500,
    7000
-  ],
-  "soldout": [
-   "4–5Y",
-   "5–6Y",
-   "6–7Y",
-   "7–8Y",
-   "8–9Y",
-   "9–10Y",
-   "10–11Y",
-   "11–12Y",
-   "12–13Y"
   ],
   "pos": "50% 30%",
   "fabric": "Ivory cotton with a scattered botanical print, blush ribbon bows",
