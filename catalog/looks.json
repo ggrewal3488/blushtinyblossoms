@@ -379,11 +379,11 @@
   "id": "lilac-bloom-bandi-set",
   "name": "Lilac Bloom Bandi Set",
   "sil": "Kurta pyjama + bandi jacket",
-  "pal": "",
+  "pal": "Lilac/Green",
   "cat": [
    "boys"
   ],
-  "contents": "",
+  "contents": "3 pieces: Kurta, pyjama, bandi jacket",
   "prices": [
    5300,
    6300,
@@ -391,9 +391,9 @@
    7300,
    7800
   ],
-  "pos": "50% 50%",
+  "pos": "50% 30%",
   "new": true,
-  "fabric": "",
-  "detail": ""
+  "fabric": "Cotton Kurta & Pyjama | Chanderi Bandi",
+  "detail": "For little brothers. A lilac kurta and pyjama under a green gingham bandi printed with lilac and coral garden flowers."
  }
 ]
