@@ -444,28 +444,8 @@
   "sil": "Green Gardenia Kurta Set",
   "pal": "Green, Cream",
   "cat": [
-   "kurta"
-  ],
-  "contents": "Kurta, Pyjama",
-  "prices": [
-   2800,
-   3800,
-   4300,
-   4800,
-   5300
-  ],
-  "pos": "50% 30%",
-  "new": true,
-  "fabric": "Chanderi Cotton",
-  "detail": ""
- },
- {
-  "id": "blush-tropica-kurta-set-2",
-  "name": "Blush Tropica Kurta Set",
-  "sil": "Blush Tropica Kurta Set",
-  "pal": "Blush Pink, Cream",
-  "cat": [
-   "kurta"
+   "kurta",
+   "boys"
   ],
   "contents": "Kurta, Pyjama",
   "prices": [
