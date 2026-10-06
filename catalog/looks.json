@@ -437,5 +437,26 @@
   "new": true,
   "fabric": "Chanderi Cotton",
   "detail": ""
+ },
+ {
+  "id": "green-gardenia-kurta-set",
+  "name": "Green Gardenia Kurta Set",
+  "sil": "Green Gardenia Kurta Set",
+  "pal": "Green, Cream",
+  "cat": [
+   "kurta"
+  ],
+  "contents": "Kurta, Pyjama",
+  "prices": [
+   2800,
+   3800,
+   4300,
+   4800,
+   5300
+  ],
+  "pos": "50% 30%",
+  "new": true,
+  "fabric": "Chanderi Cotton",
+  "detail": ""
  }
 ]
