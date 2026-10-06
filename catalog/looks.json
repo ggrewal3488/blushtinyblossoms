@@ -395,5 +395,26 @@
   "new": true,
   "fabric": "Cotton Kurta & Pyjama | Chanderi Bandi",
   "detail": "For little brothers. A lilac kurta and pyjama under a green gingham bandi printed with lilac and coral garden flowers."
+ },
+ {
+  "id": "lemon-blossom-kurta-set",
+  "name": "Lemon Blossom Kurta Set",
+  "sil": "Floral Kurta + Pyjama Set",
+  "pal": "Lemon, Lilac, Cream",
+  "cat": [
+   "kurta"
+  ],
+  "contents": "Kurta, Pjyama",
+  "prices": [
+   2800,
+   3800,
+   4300,
+   4800,
+   5300
+  ],
+  "pos": "50% 30%",
+  "new": true,
+  "fabric": "Chanderi Cotton",
+  "detail": ""
  }
 ]
