@@ -378,12 +378,12 @@
  {
   "id": "lilac-bloom-bandi-set",
   "name": "Lilac Bloom Bandi Set",
-  "sil": "Kurta pyjama + bandi jacket",
-  "pal": "Lilac/Green",
+  "sil": "Kurta pyjama + Bandi jacket",
+  "pal": "Lilac/ Spring Green",
   "cat": [
    "boys"
   ],
-  "contents": "Kurta, pyjama, bandi jacket",
+  "contents": "Kurta, Pyjama, Bandi",
   "prices": [
    5300,
    6300,
@@ -393,8 +393,8 @@
   ],
   "pos": "50% 30%",
   "new": true,
-  "fabric": "Cotton Kurta & Pyjama | Chanderi Bandi",
-  "detail": "For little brothers. A lilac kurta and pyjama under a green gingham bandi printed with lilac and coral garden flowers."
+  "fabric": "Chanderi Cotton",
+  "detail": ""
  },
  {
   "id": "lemon-blossom-kurta-set",
@@ -442,7 +442,7 @@
   "id": "green-gardenia-kurta-set",
   "name": "Green Gardenia Kurta Set",
   "sil": "Green Gardenia Kurta Set",
-  "pal": "Green, Cream",
+  "pal": "Spring Green/ Ivory",
   "cat": [
    "kurta",
    "boys"
@@ -485,7 +485,7 @@
   "id": "blush-tropica-bandi-set",
   "name": "Blush Tropica Bandi Set",
   "sil": "Floral Bandi + Pyjama",
-  "pal": "Blush Pink, Ivory",
+  "pal": "Blush Pink/ Ivory",
   "cat": [
    "boys"
   ],
