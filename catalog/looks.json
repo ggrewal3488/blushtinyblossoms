@@ -480,5 +480,26 @@
   "new": true,
   "fabric": "Chanderi Cotton",
   "detail": ""
+ },
+ {
+  "id": "blush-tropica-bandi-set",
+  "name": "Blush Tropica Bandi Set",
+  "sil": "Floral Bandi + Pyjama",
+  "pal": "Blush Pink, Ivory",
+  "cat": [
+   "boys"
+  ],
+  "contents": "Bandi, Kurta, Pyjama",
+  "prices": [
+   5800,
+   6800,
+   7300,
+   7800,
+   8300
+  ],
+  "pos": "50% 30%",
+  "new": true,
+  "fabric": "Chanderi Cotton",
+  "detail": ""
  }
 ]
