@@ -12,7 +12,17 @@
   const priceText = (l, size) => (priceOf(l, size) ? money(priceOf(l, size)) : fromPrice(l));
   const igDM = "https://ig.me/m/" + SHOP.instagram;
   /* Meta Pixel shop events (only if the pixel loaded) */
-  const pixel = (ev, data, opts) => { try { if (window.fbq) window.fbq("track", ev, data || {}, opts || {}); } catch (e) {} };
+  const GA = { ViewContent: "view_item", AddToCart: "add_to_cart", InitiateCheckout: "begin_checkout", Purchase: "purchase", Lead: "generate_lead" };
+  const pixel = (ev, data, opts) => {
+    try { if (window.fbq) window.fbq("track", ev, data || {}, opts || {}); } catch (e) {}
+    /* the same shop events for the Google tag (Google Ads / Analytics) */
+    try {
+      if (!window.gtag || !GA[ev]) return; const d = data || {};
+      const g = { currency: d.currency || "INR", value: Number(d.value) || 0, items: (d.content_ids || []).map(id => ({ item_id: id, item_name: d.content_name || id })) };
+      if (ev === "Purchase" && opts && opts.eventID) g.transaction_id = opts.eventID;
+      window.gtag("event", GA[ev], g);
+    } catch (e) {}
+  };
   const shipFor = sub => (sub >= SHOP.freeAbove ? 0 : SHOP.shipFee);
   const waLink = text => "https://wa.me/" + SHOP.whatsapp + (text ? "?text=" + encodeURIComponent(text) : "");
 

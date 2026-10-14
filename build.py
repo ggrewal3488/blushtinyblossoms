@@ -22,6 +22,7 @@ SHOP = {
     # Checkout button and the /checkout page. Empty keeps the site in enquiry mode (WhatsApp / Instagram only).
     "checkoutApi": "https://muddy-cell-d465.ckanak.workers.dev",       # e.g. "https://blush-checkout.yourname.workers.dev"
     "metaPixel": "1115483227495788",   # Meta (Facebook/Instagram) Pixel ID. Empty removes the pixel.
+    "googleTag": "G-XY4JKSLV6B",       # Google tag (Google Ads / Analytics), from ads.google.com. Empty removes it.
     # Welcome offer: a first-visit pop-up collects name + mobile and gives this % off the first order.
     # Needs the checkout service and its Google Sheet link (see README). 0 switches the pop-up and the discount off.
     "welcomePct": 10,
@@ -188,6 +189,22 @@ FOOT_CATS = "".join(f'<li><a href="/collection?show={k}">{lab}</a></li>' for k, 
 NAV = [("/collection", "Collection"), ("/our-story", "Our Story"), ("/size-care", "Size Guide"), ("/faq", "FAQ"), ("/contact", "Contact")]
 
 
+def gtag():
+    """Google tag (gtag.js) as given by Google Ads: page views on every page. Shop events are sent from site.js."""
+    gid = SHOP.get("googleTag")
+    if not gid: return ""
+    return f"""
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={gid}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+
+  gtag('config', '{gid}');
+</script>"""
+
+
 def pixel():
     """Meta Pixel base code (PageView on every page). Shop events are sent from site.js."""
     pid = SHOP.get("metaPixel")
@@ -239,7 +256,7 @@ def layout(path, title, desc, body, og="blush-tropica", active=None, jsonld=None
 <link rel="preload" href="/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>if(location.protocol==="http:"&&/blushtinyblossoms[.]co[.]in$/.test(location.hostname))location.replace("https:"+location.href.slice(5))</script>
 <link rel="stylesheet" href="/assets/site.css?v={VER}">
-{ld}{extra_head}{pixel()}
+{ld}{extra_head}{gtag()}{pixel()}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
